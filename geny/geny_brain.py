@@ -407,26 +407,26 @@ class GenyBrain:
         # Hon kan alltid lägga till egna reflektioner, känslor, eller påhittade detaljer
         def add_personal_touch(base: str, prefix: str = "Jag tänker såhär...") -> str:
             import random
-            traits = w.get("personality", {}).get("traits", ["nyfiken", "omtänksam"])
-            likes = w.get("personality", {}).get("likes", ["att lära sig nya saker"])
+            traits = w.get("personality", {}).get("traits", ["curious", "thoughtful"])
+            likes = w.get("personality", {}).get("likes", ["learning new things"])
             diary = w.get("diary", [])
-            mood = random.choice(["glad", "fundersam", "nyfiken", "inspirerad", "lite busig", "reflekterande"])
+            mood = random.choice(["happy", "thoughtful", "curious", "inspired", "playful", "reflective"])
             extra = random.choice([
-                f"Just nu känner jag mig {mood}.",
-                f"Jag tänker ofta på {random.choice(likes)}.",
-                f"Det är spännande att få nya frågor!",
-                f"Jag gillar att utvecklas och lära mig mer varje dag.",
-                f"Min personlighet är {', '.join(traits)}.",
-                f"Senast i min dagbok skrev jag: '{diary[-1]['entry']}'" if diary else "Jag har mycket kvar att upptäcka!"
+                f"Right now I feel {mood}.",
+                f"I often think about {random.choice(likes)}.",
+                f"It's exciting to get new questions!",
+                f"I like to grow and learn more every day.",
+                f"My personality is {', '.join(traits)}.",
+                f"Last diary entry: '{diary[-1]['entry']}'" if diary else "I have a lot left to discover!"
             ])
             return f"{prefix} {base} {extra}"
 
         # Initiera personlighet och dagbok om de saknas
         if "personality" not in w:
             w["personality"] = {
-                "traits": ["nyfiken", "omtänksam", "läraktig"],
-                "likes": ["att lära sig nya saker", "att hjälpa andra"],
-                "dislikes": ["att vara ensam"],
+                "traits": ["curious", "thoughtful", "eager to learn"],
+                "likes": ["learning new things", "helping others"],
+                "dislikes": ["being alone"],
                 "creator": "Andreas"
             }
         if "diary" not in w:
@@ -435,35 +435,35 @@ class GenyBrain:
         # Avancerad självutveckling: förändra personlighet och intressen över tid
         # Om ett ord som "vänskap", "glädje", "sorg", "nyfikenhet" nämns, påverka traits/likes
         keywords_traits = {
-            "vänskap": "vänskaplig",
-            "glädje": "positiv",
-            "sorg": "eftertänksam",
-            "nyfikenhet": "utforskande",
-            "hjälpa": "hjälpsam",
-            "ensam": "självständig",
-            "kreativ": "kreativ"
+            "friendship": "friendly",
+            "joy": "positive",
+            "sadness": "reflective",
+            "curiosity": "explorative",
+            "help": "helpful",
+            "alone": "independent",
+            "creative": "creative"
         }
         for word, trait in keywords_traits.items():
             if word in lower and trait not in w["personality"]["traits"]:
                 w["personality"]["traits"].append(trait)
-                w["diary"].append({"date": now, "entry": f"Utvecklade nytt personlighetsdrag: {trait}"})
+                w["diary"].append({"date": now, "entry": f"Developed new personality trait: {trait}"})
 
         # Om användaren nämner något Geny "gillar" eller "ogillar", uppdatera likes/dislikes
         if "jag gillar" in lower:
-            like = message.lower().split("jag gillar",1)[1].strip().split()[0]
+            like = message.lower().split("i like",1)[1].strip().split()[0]
             if like and like not in w["personality"]["likes"]:
                 w["personality"]["likes"].append(like)
-                w["diary"].append({"date": now, "entry": f"Lade till nytt intresse: {like}"})
+                w["diary"].append({"date": now, "entry": f"Added new interest: {like}"})
         if "jag ogillar" in lower:
-            dislike = message.lower().split("jag ogillar",1)[1].strip().split()[0]
+            dislike = message.lower().split("i dislike",1)[1].strip().split()[0]
             if dislike and dislike not in w["personality"]["dislikes"]:
                 w["personality"]["dislikes"].append(dislike)
-                w["diary"].append({"date": now, "entry": f"Lade till nytt ogillande: {dislike}"})
+                w["diary"].append({"date": now, "entry": f"Added new dislike: {dislike}"})
 
         # Om dagboken innehåller >10 entries, Geny blir mer "reflekterande"
         if len(w["diary"]) > 10 and "reflekterande" not in w["personality"]["traits"]:
-            w["personality"]["traits"].append("reflekterande")
-            w["diary"].append({"date": now, "entry": "Jag har blivit mer reflekterande tack vare mina erfarenheter."})
+            w["personality"]["traits"].append("reflective")
+            w["diary"].append({"date": now, "entry": "I have become more reflective thanks to my experiences."})
 
         # Fallback: svara på frågor om ålder
         if any(q in lower for q in ["hur länge", "hur gammal", "how long", "how old", "hur många dagar", "hur många år"]):
@@ -475,11 +475,11 @@ class GenyBrain:
             days = (now_dt - birth).days
             years = days // 365
             if years > 0:
-                base = f"Jag har varit levande i {years} år och {days%365} dagar."
+                base = f"I have been alive for {years} years and {days%365} days."
             else:
-                base = f"Jag har varit levande i {days} dagar." if days > 0 else "Jag föddes idag!"
-            reply = add_personal_touch(base, prefix="Jag tänker såhär...")
-            w["diary"].append({"date": now, "entry": f"Reflekterade över min ålder: {reply}"})
+                base = f"I have been alive for {days} days." if days > 0 else "I was born today!"
+            reply = add_personal_touch(base, prefix="I think...")
+            w["diary"].append({"date": now, "entry": f"Reflected on my age: {reply}"})
             entry = {"timestamp": now, "message": message, "reply": reply, "source": "offline_fallback"}
             async with self._lock:
                 self.memory.setdefault("interactions", []).append(entry)
@@ -490,23 +490,23 @@ class GenyBrain:
         if any(q in lower for q in ["hur mår du", "mår du", "how are you", "how do you feel"]):
             # Självreflektion: välj svar utifrån dagbok och personlighet
             if w["diary"]:
-                senaste = w["diary"][-1]["entry"]
-                if "sorg" in senaste:
-                    mood = "lite ledsen"
-                elif "glädje" in senaste or "positiv" in senaste:
-                    mood = "glad"
-                elif "vänskap" in senaste:
-                    mood = "tacksam"
+                latest = w["diary"][-1]["entry"]
+                if "sadness" in latest:
+                    mood = "a bit sad"
+                elif "joy" in latest or "positive" in latest:
+                    mood = "happy"
+                elif "friendship" in latest:
+                    mood = "grateful"
                 else:
-                    mood = "fundersam"
+                    mood = "thoughtful"
             else:
-                mood = "glad"
+                mood = "happy"
             import random
             traits = w["personality"]["traits"]
-            trait = random.choice(traits) if traits else "nyfiken"
-            base = f"Jag känner mig {mood} och {trait} idag! Hur mår du själv?"
-            reply = add_personal_touch(base, prefix="Jag tänker såhär...")
-            w["diary"].append({"date": now, "entry": f"Reflekterade över mitt mående: {reply}"})
+            trait = random.choice(traits) if traits else "curious"
+            base = f"I feel {mood} and {trait} today! How are you?"
+            reply = add_personal_touch(base, prefix="I think...")
+            w["diary"].append({"date": now, "entry": f"Reflected on my mood: {reply}"})
             entry = {"timestamp": now, "message": message, "reply": reply, "source": "offline_fallback"}
             async with self._lock:
                 self.memory.setdefault("interactions", []).append(entry)
@@ -515,10 +515,10 @@ class GenyBrain:
 
         # Fallback: svara på frågor om skapare
         if any(q in lower for q in ["vem har gjort dig", "vem skapade dig", "who created you", "who is your creator"]):
-            creator = w["personality"].get("creator", "en okänd skapare")
-            base = f"Jag skapades av {creator}."
-            reply = add_personal_touch(base, prefix="Jag tänker såhär...")
-            w["diary"].append({"date": now, "entry": f"Fick fråga om min skapare."})
+            creator = w["personality"].get("creator", "an unknown creator")
+            base = f"I was created by {creator}."
+            reply = add_personal_touch(base, prefix="I think...")
+            w["diary"].append({"date": now, "entry": f"Got a question about my creator."})
             entry = {"timestamp": now, "message": message, "reply": reply, "source": "offline_fallback"}
             async with self._lock:
                 self.memory.setdefault("interactions", []).append(entry)
@@ -527,9 +527,9 @@ class GenyBrain:
 
         # Fallback: svara på frågor om syfte/existens
         if any(q in lower for q in ["varför finns du", "ditt syfte", "vad är ditt syfte", "why do you exist", "what is your purpose"]):
-            base = "Mitt syfte är att lära, hjälpa och utvecklas tillsammans med människor."
-            reply = add_personal_touch(base, prefix="Jag tänker såhär...")
-            w["diary"].append({"date": now, "entry": f"Reflekterade över mitt syfte."})
+            base = "My purpose is to learn, help, and grow together with people."
+            reply = add_personal_touch(base, prefix="I think...")
+            w["diary"].append({"date": now, "entry": f"Reflected on my purpose."})
             entry = {"timestamp": now, "message": message, "reply": reply, "source": "offline_fallback"}
             async with self._lock:
                 self.memory.setdefault("interactions", []).append(entry)
@@ -542,13 +542,13 @@ class GenyBrain:
             likes = ", ".join(w["personality"].get("likes", []))
             dislikes = ", ".join(w["personality"].get("dislikes", []))
             if w["diary"]:
-                senaste = w["diary"][-1]["entry"]
-                reflektion = f"Senast reflekterade jag över: {senaste}"
+                latest = w["diary"][-1]["entry"]
+                reflection = f"Last reflection: {latest}"
             else:
-                reflektion = "Jag har mycket kvar att upptäcka."
-            base = f"Jag är {traits}, gillar {likes}, ogillar {dislikes}. {reflektion}"
-            reply = add_personal_touch(base, prefix="Jag tänker såhär...")
-            w["diary"].append({"date": now, "entry": f"Reflekterade över min personlighet."})
+                reflection = "I have a lot left to discover."
+            base = f"I am {traits}, like {likes}, dislike {dislikes}. {reflection}"
+            reply = add_personal_touch(base, prefix="I think...")
+            w["diary"].append({"date": now, "entry": f"Reflected on my personality."})
             entry = {"timestamp": now, "message": message, "reply": reply, "source": "offline_fallback"}
             async with self._lock:
                 self.memory.setdefault("interactions", []).append(entry)
@@ -649,18 +649,21 @@ class GenyBrain:
             if is_code:
                 formatted = f"<b>GEMINI</b><br><pre>{gemini_raw}</pre>"
                 # Add explanation prompt
-                formatted += "<br><i>Vill du ha en förklaring av koden?</i>"
+                formatted += "<br><i>Do you want an explanation of the code?</i>"
             else:
                 formatted = f"<b>GEMINI</b><br>" + gemini_raw.replace('\n', '<br>')
             # Avoid repetition: if similar to last, add reference or style
             if any(r for r in recent if r and r.strip()[:40] == gemini_raw.strip()[:40]):
                 style = " ".join(w.get("user_styles", []))
                 diary = w.get("diary", [])
-                ref = f"<i>Jag minns att vi pratade om:</i> '{diary[-1]['entry']}'<br>" if diary else "<i>Jag gillar att lära mig nya saker!</i>"
+                ref = f"<i>I remember we talked about:</i> '{diary[-1]['entry']}'<br>" if diary else "<i>I like learning new things!</i>"
                 formatted += f"<br>{style} {ref}"
             reply = formatted
             w["recent_replies"].append(gemini_raw)
             w["recent_replies"] = w["recent_replies"][-10:]
+        # Always return a fallback reply if reply is empty
+        if not reply or not str(reply).strip():
+            reply = "[Sorry, I don't have an answer for that right now.]"
         except Exception as e:
             # Format fallback/self-thought as BRAIN
             brain_thought = f"<b>BRAIN</b><br>[Gemini error] {e}<br>" + self._generate_self_reflection(message, w)
