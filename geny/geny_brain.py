@@ -642,8 +642,16 @@ class GenyBrain:
         try:
             gemini_raw = await gemini_generate_reply(f"{system_prompt}\n{message}")
             recent = w["recent_replies"]
-            # Format Gemini response with clear structure
-            formatted = f"<b>GEMINI</b><br>" + gemini_raw.replace('\n', '<br>')
+            # Detect code block (simple heuristic)
+            is_code = any(
+                kw in gemini_raw.lower() for kw in ["import ", "def ", "class ", "torch.", "transformers", "print(", "for ", "if ", "while ", "model.", "tokenizer."]
+            )
+            if is_code:
+                formatted = f"<b>GEMINI</b><br><pre>{gemini_raw}</pre>"
+                # Add explanation prompt
+                formatted += "<br><i>Vill du ha en förklaring av koden?</i>"
+            else:
+                formatted = f"<b>GEMINI</b><br>" + gemini_raw.replace('\n', '<br>')
             # Avoid repetition: if similar to last, add reference or style
             if any(r for r in recent if r and r.strip()[:40] == gemini_raw.strip()[:40]):
                 style = " ".join(w.get("user_styles", []))
