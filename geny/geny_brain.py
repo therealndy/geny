@@ -379,6 +379,7 @@ class GenyBrain:
 
     async def generate_reply(self, message: str) -> str:
         # Dynamisk stil och minne: Spara typiska uttryck, emojis och ton från användaren
+        w = self.memory["world"]
         if "user_styles" not in w:
             w["user_styles"] = []
         import re

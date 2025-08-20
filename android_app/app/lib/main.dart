@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 // Change this to your computer's IP when running on a real device
-const String backendBaseUrl = 'http://10.90.209.157:8000';
+const String backendBaseUrl = 'https://geny-run.onrender.com';
 
 void main() {
   runApp(const GenyApp());
@@ -19,12 +19,12 @@ class GenyApp extends StatelessWidget {
       title: 'Geny Chat',
       theme: ThemeData(
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: Color(0xFF23243B),
+        scaffoldBackgroundColor: Color(0xFF1A1147),
         colorScheme: ColorScheme.dark(
           primary: Color(0xFF7F5AF0),
           secondary: Color(0xFF2CB67D),
-          background: Color(0xFF23243B),
-          surface: Color(0xFF23243B),
+          background: Color(0xFF1A1147),
+          surface: Color(0xFF1A1147),
         ),
         textTheme: const TextTheme(
           bodyLarge: TextStyle(color: Colors.white, fontSize: 18),
@@ -32,7 +32,7 @@ class GenyApp extends StatelessWidget {
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Color(0xFF23243B),
+          fillColor: Color(0xFF1A1147),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(24),
             borderSide: BorderSide.none,
