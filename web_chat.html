@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Geny Web Chat</title>
+  <style>
+    body { background: #181A20; color: #fff; font-family: sans-serif; margin: 0; }
+    #chat { max-width: 500px; margin: 40px auto; background: #222; border-radius: 12px; box-shadow: 0 2px 12px #0004; padding: 24px; }
+    .msg { margin: 12px 0; }
+    .user { text-align: right; color: #7F5AF0; }
+    .geny { text-align: left; color: #2CB67D; }
+    #inputRow { display: flex; gap: 8px; margin-top: 18px; }
+    #msgInput { flex: 1; padding: 10px; border-radius: 6px; border: none; font-size: 16px; }
+    #sendBtn { background: #7F5AF0; color: #fff; border: none; border-radius: 6px; padding: 10px 18px; font-size: 16px; cursor: pointer; }
+    #sendBtn:disabled { background: #444; }
+  </style>
+</head>
+<body>
+  <div id="chat">
+    <h2>Geny Web Chat</h2>
+    <div id="messages"></div>
+    <div id="inputRow">
+      <input id="msgInput" type="text" placeholder="Type your message..." autofocus />
+      <button id="sendBtn">Send</button>
+    </div>
+  </div>
+  <script>
+    const backendUrl = 'https://geny-run.onrender.com/chat';
+    const messagesDiv = document.getElementById('messages');
+    const input = document.getElementById('msgInput');
+    const sendBtn = document.getElementById('sendBtn');
+
+    function addMsg(text, who) {
+      const div = document.createElement('div');
+      div.className = 'msg ' + who;
+      div.textContent = text;
+      messagesDiv.appendChild(div);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    sendBtn.onclick = async () => {
+      const msg = input.value.trim();
+      if (!msg) return;
+      addMsg(msg, 'user');
+      input.value = '';
+      sendBtn.disabled = true;
+      addMsg('Geny is typing...', 'geny');
+      try {
+        const res = await fetch(backendUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: msg })
+        });
+        const data = await res.json();
+        // Remove 'Geny is typing...'
+        messagesDiv.lastChild.remove();
+        addMsg(data.reply || '[No reply]', 'geny');
+      } catch (e) {
+        messagesDiv.lastChild.remove();
+        addMsg('[Error: ' + e + ']', 'geny');
+      }
+      sendBtn.disabled = false;
+      input.focus();
+    };
+
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') sendBtn.click();
+    });
+  </script>
+</body>
+</html>

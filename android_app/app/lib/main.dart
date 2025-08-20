@@ -412,29 +412,33 @@ class _AgeTabState extends State<AgeTab> {
       home: Stack(
         children: [
           const ChatScreen(),
+          // Status indicator overlay
           Positioned(
             top: 16,
             right: 16,
-            child: Container(
-              width: 18,
-              height: 18,
-              decoration: BoxDecoration(
-                color: _backendOk ? Colors.green : Colors.red,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 4,
+            child: Builder(
+              builder: (context) {
+                // Only show indicator if ChatScreen is in the widget tree
+                final chatScreenState = context.findAncestorStateOfType<_ChatScreenState>();
+                final backendOk = chatScreenState?._backendOk ?? false;
+                return Container(
+                  width: 18,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    color: backendOk ? Colors.green : Colors.red,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 4,
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             ),
           ),
         ],
-      ),
-    );
-          ],
-        ),
       ),
     );
   }

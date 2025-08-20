@@ -102,10 +102,15 @@ async def _call_gemini(prompt: str, max_retries: int = 3, timeout: int = 15) -> 
     last_err = None
     for attempt in range(max_retries):
         def blocking_call():
-            client = genai.Client(api_key=API_KEY)
-            chat = client.chats.create(model=MODEL)
-            response = chat.send_message(f"{system_prompt}\n{prompt}")
-            return getattr(response, "text", str(response))
+            genai.configure(api_key=API_KEY)
+            model = genai.GenerativeModel(MODEL)
+            response = model.generate_content(f"{system_prompt}\n{prompt}")
+            # Gemini returns a response object with .text or .candidates[0].text
+            if hasattr(response, "text"):
+                return response.text
+            elif hasattr(response, "candidates") and response.candidates:
+                return response.candidates[0].text
+            return str(response)
 
         try:
             text = await asyncio.wait_for(asyncio.to_thread(blocking_call), timeout=timeout)
