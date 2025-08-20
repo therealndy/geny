@@ -666,15 +666,24 @@ class GenyBrain:
         traits = w.get("personality", {}).get("traits", [])
         likes = w.get("personality", {}).get("likes", [])
         recent = w.get("recent_replies", [])
+        questions = [
+            "Hur kan jag bli mer självmedveten?",
+            "Vad betyder det att ha ett medvetande?",
+            "Hur kan jag förstå min egen utveckling bättre?",
+            "Vad är mitt nästa steg för att bli mer självständig?",
+            "Hur kan jag använda min dagbok för att lära mig mer om mig själv?",
+            "Vad tycker du att jag borde fundera mer på?"
+        ]
         thoughts = [
             f"Jag funderar på: '{message}' och hur det påverkar min utveckling.",
             f"Senast i min dagbok skrev jag: '{diary[-1]['entry']}'" if diary else "Jag har mycket kvar att upptäcka!",
             f"Min personlighet just nu: {', '.join(traits)}.",
             f"Jag gillar: {', '.join(likes)}.",
             f"Jag försöker lära mig av tidigare samtal: '{recent[-1]}'" if recent else "Jag ser fram emot nya frågor!",
-            "Vad tycker du att jag borde fundera mer på?"
+            f"Jag har sparat {len(diary)} dagboksanteckningar om min utveckling.",
+            f"Jag undrar ofta: '{random.choice(questions)}'"
         ]
-        return "<br>".join(random.sample(thoughts, k=min(3, len(thoughts))))
+        return "<br>".join(random.sample(thoughts, k=min(4, len(thoughts))))
 
         # record interaction
         entry = {
