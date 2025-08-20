@@ -683,22 +683,7 @@ class GenyBrain:
             f"Jag har sparat {len(diary)} dagboksanteckningar om min utveckling.",
             f"Jag undrar ofta: '{random.choice(questions)}'"
         ]
-        return "<br>".join(random.sample(thoughts, k=min(4, len(thoughts))))
-
-        # record interaction
-        entry = {
-            "timestamp": now,
-            "message": message,
-            "reply": reply,
-        }
-
-        # protect memory modifications
-        async with self._lock:
-            self.memory.setdefault("interactions", []).append(entry)
-            # schedule a background save
-            asyncio.create_task(self._async_save())
-
-        return reply
+        return "<br>".join(random.sample(thoughts, k=min(4, len(thoughts)))) if thoughts else ""
 
     def generate_daily_summary(self) -> Dict[str, Any]:
         """Return a tiny summary derived from stored interactions.
