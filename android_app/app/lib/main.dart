@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-// Change this to your computer's IP when running on a real device
-const String backendBaseUrl = 'https://geny-run.onrender.com';
+// Change this to your Render backend URL
+const String backendBaseUrl = 'https://geny-1.onrender.com';
 
 void main() {
   runApp(const GenyApp());
@@ -286,7 +286,7 @@ class _LifeTabState extends State<LifeTab> {
   Future<void> _fetch() async {
     setState(() { loading = true; error = null; });
     try {
-  final uri = Uri.parse('$backendBaseUrl/life');
+      final uri = Uri.parse('$backendBaseUrl/life');
       final res = await http.get(uri);
       if (res.statusCode == 200) {
         final body = jsonDecode(res.body);
@@ -296,10 +296,10 @@ class _LifeTabState extends State<LifeTab> {
           loading = false;
         });
       } else {
-        setState(() { error = 'Fel från backend (${res.statusCode})'; loading = false; });
+        setState(() { error = 'Backend error (${res.statusCode})'; loading = false; });
       }
     } catch (e) {
-      setState(() { error = 'Nätverksfel: $e'; loading = false; });
+      setState(() { error = 'Network error: $e'; loading = false; });
     }
   }
 
@@ -367,7 +367,7 @@ class _AgeTabState extends State<AgeTab> {
   Future<void> _fetch() async {
     setState(() { loading = true; error = null; });
     try {
-  final uri = Uri.parse('$backendBaseUrl/age');
+      final uri = Uri.parse('$backendBaseUrl/age');
       final res = await http.get(uri);
       if (res.statusCode == 200) {
         setState(() {
@@ -375,10 +375,10 @@ class _AgeTabState extends State<AgeTab> {
           loading = false;
         });
       } else {
-        setState(() { error = 'Fel från backend (${res.statusCode})'; loading = false; });
+        setState(() { error = 'Backend error (${res.statusCode})'; loading = false; });
       }
     } catch (e) {
-      setState(() { error = 'Nätverksfel: $e'; loading = false; });
+      setState(() { error = 'Network error: $e'; loading = false; });
     }
   }
 
@@ -437,7 +437,7 @@ class _StatusTabState extends State<StatusTab> {
   Future<void> _fetch() async {
     setState(() { loading = true; error = null; });
     try {
-  final uri = Uri.parse('$backendBaseUrl/status');
+      final uri = Uri.parse('$backendBaseUrl/status');
       final res = await http.get(uri);
       if (res.statusCode == 200) {
         setState(() {
@@ -445,10 +445,10 @@ class _StatusTabState extends State<StatusTab> {
           loading = false;
         });
       } else {
-        setState(() { error = 'Fel från backend (${res.statusCode})'; loading = false; });
+        setState(() { error = 'Backend error (${res.statusCode})'; loading = false; });
       }
     } catch (e) {
-      setState(() { error = 'Nätverksfel: $e'; loading = false; });
+      setState(() { error = 'Network error: $e'; loading = false; });
     }
   }
 
@@ -507,7 +507,7 @@ class _RelationsTabState extends State<RelationsTab> {
   Future<void> _fetch() async {
     setState(() { loading = true; error = null; });
     try {
-  final uri = Uri.parse('$backendBaseUrl/relations');
+      final uri = Uri.parse('$backendBaseUrl/relations');
       final res = await http.get(uri);
       if (res.statusCode == 200) {
         final body = jsonDecode(res.body);
@@ -516,10 +516,10 @@ class _RelationsTabState extends State<RelationsTab> {
           loading = false;
         });
       } else {
-        setState(() { error = 'Fel från backend (${res.statusCode})'; loading = false; });
+        setState(() { error = 'Backend error (${res.statusCode})'; loading = false; });
       }
     } catch (e) {
-      setState(() { error = 'Nätverksfel: $e'; loading = false; });
+      setState(() { error = 'Network error: $e'; loading = false; });
     }
   }
 

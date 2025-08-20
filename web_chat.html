@@ -26,7 +26,7 @@
     </div>
   </div>
   <script>
-    const backendUrl = 'https://geny-run.onrender.com/chat';
+  const backendUrl = 'https://geny-1.onrender.com/chat';
     const messagesDiv = document.getElementById('messages');
     const input = document.getElementById('msgInput');
     const sendBtn = document.getElementById('sendBtn');
@@ -34,7 +34,11 @@
     function addMsg(text, who) {
       const div = document.createElement('div');
       div.className = 'msg ' + who;
-      div.textContent = text;
+      if (who === 'geny') {
+        div.innerHTML = text;
+      } else {
+        div.textContent = text;
+      }
       messagesDiv.appendChild(div);
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }

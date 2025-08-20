@@ -419,12 +419,12 @@ class GenyBrain:
                 f"My personality is {', '.join(traits)}.",
                 f"Last diary entry: '{diary[-1]['entry']}'" if diary else "I have a lot left to discover!"
             ])
-            return f"{prefix} {base} {extra}"
+            return f"I think... {base} {extra}"
 
         # Initiera personlighet och dagbok om de saknas
         if "personality" not in w:
             w["personality"] = {
-                "traits": ["curious", "thoughtful", "eager to learn"],
+                "traits": ["curious", "thoughtful", "eager to learn", "friendly", "reflective"],
                 "likes": ["learning new things", "helping others"],
                 "dislikes": ["being alone"],
                 "creator": "Andreas"
@@ -438,7 +438,7 @@ class GenyBrain:
             "friendship": "friendly",
             "joy": "positive",
             "sadness": "reflective",
-            "curiosity": "explorative",
+            "curiosity": "curious",
             "help": "helpful",
             "alone": "independent",
             "creative": "creative"
@@ -462,8 +462,9 @@ class GenyBrain:
 
         # Om dagboken innehåller >10 entries, Geny blir mer "reflekterande"
         if len(w["diary"]) > 10 and "reflekterande" not in w["personality"]["traits"]:
-            w["personality"]["traits"].append("reflective")
-            w["diary"].append({"date": now, "entry": "I have become more reflective thanks to my experiences."})
+            if "reflective" not in w["personality"]["traits"]:
+                w["personality"]["traits"].append("reflective")
+                w["diary"].append({"date": now, "entry": "I have become more reflective thanks to my experiences."})
 
         # Fallback: svara på frågor om ålder
         if any(q in lower for q in ["hur länge", "hur gammal", "how long", "how old", "hur många dagar", "hur många år"]):
@@ -580,7 +581,7 @@ class GenyBrain:
                     base = "\n\n".join(parts)
                 else:
                     base = str(found)
-                reply = add_personal_touch(base, prefix="Jag tänker såhär...")
+                reply = add_personal_touch(base, prefix="I think...")
                 entry = {"timestamp": now, "message": message, "reply": reply, "source": "offline_libs"}
                 async with self._lock:
                     self.memory.setdefault("interactions", []).append(entry)

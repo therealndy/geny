@@ -155,5 +155,5 @@ async def generate_reply(prompt: str, *, max_retries: int = 3, timeout: Optional
         user_msg = prompt
 
     # Friendly, personal fallback
-    reply = f"Jag tänker såhär... {user_msg} Just nu är jag inte uppkopplad mot Gemini, men jag lyssnar och hjälper gärna! Vad vill du prata om?"
+    reply = f"I think... {user_msg} I'm not connected to Gemini right now, but I'm here to listen and help! What would you like to talk about?"
     return reply
