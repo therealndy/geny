@@ -19,12 +19,12 @@ class GenyApp extends StatelessWidget {
       title: 'Geny Chat',
       theme: ThemeData(
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: Color(0xFF1A1147),
+        scaffoldBackgroundColor: Color(0xFF181A20),
         colorScheme: ColorScheme.dark(
           primary: Color(0xFF7F5AF0),
           secondary: Color(0xFF2CB67D),
-          background: Color(0xFF1A1147),
-          surface: Color(0xFF1A1147),
+          background: Color(0xFF181A20),
+          surface: Color(0xFF181A20),
         ),
         textTheme: const TextTheme(
           bodyLarge: TextStyle(color: Colors.white, fontSize: 18),
@@ -32,7 +32,7 @@ class GenyApp extends StatelessWidget {
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Color(0xFF1A1147),
+          fillColor: Color(0xFF181A20),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(24),
             borderSide: BorderSide.none,
@@ -65,6 +65,8 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
   bool _isWaiting = false;
   late TabController _tabController;
 
+  bool _backendOk = true;
+
   @override
   void initState() {
     super.initState();
@@ -90,7 +92,7 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
 
   Future<void> _postToBackend(String text) async {
     try {
-  final uri = Uri.parse('$backendBaseUrl/chat');
+      final uri = Uri.parse('$backendBaseUrl/chat');
       final res = await http.post(uri, headers: {'Content-Type': 'application/json'}, body: jsonEncode({'message': text}));
       if (res.statusCode == 200) {
         final body = jsonDecode(res.body);
@@ -98,17 +100,20 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
         setState(() {
           _messages.add(_ChatMessage(text: reply, isGeny: true));
           _isWaiting = false;
+          _backendOk = true;
         });
       } else {
         setState(() {
           _messages.add(_ChatMessage(text: '[backend error ${res.statusCode}]', isGeny: true));
           _isWaiting = false;
+          _backendOk = false;
         });
       }
     } catch (e) {
       setState(() {
         _messages.add(_ChatMessage(text: '[network error] $e', isGeny: true));
         _isWaiting = false;
+        _backendOk = false;
       });
     }
   }
@@ -379,33 +384,55 @@ class _AgeTabState extends State<AgeTab> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Age', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white)),
-            const SizedBox(height: 16),
-            if (loading)
-              const CircularProgressIndicator()
-            else if (error != null)
-              Text(error!, style: TextStyle(color: Colors.red, fontSize: 16))
-            else if (age != null) ...[
-              Text('Virtual age:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-              const SizedBox(height: 8),
-              Text(
-                '${age!["years"]} years, ${age!["days"]} days, ${age!["hours"]} hours, ${age!["minutes"]} minutes',
-                style: TextStyle(fontSize: 18, color: Colors.white70),
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Geny Chat',
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: Color(0xFF181A20),
+        colorScheme: ColorScheme.dark(
+          primary: Color(0xFF7F5AF0),
+          secondary: Color(0xFF2CB67D),
+          background: Color(0xFF181A20),
+          surface: Color(0xFF181A20),
+        ),
+        textTheme: const TextTheme(
+          bodyLarge: TextStyle(color: Colors.white, fontSize: 18),
+          bodyMedium: TextStyle(color: Colors.white70, fontSize: 16),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Color(0xFF181A20),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(24),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+      home: Stack(
+        children: [
+          const ChatScreen(),
+          Positioned(
+            top: 16,
+            right: 16,
+            child: Container(
+              width: 18,
+              height: 18,
+              decoration: BoxDecoration(
+                color: _backendOk ? Colors.green : Colors.red,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 4,
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              Text('Born: ${age!["since"]}', style: TextStyle(fontSize: 14, color: Colors.white38)),
-            ],
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: loading ? null : _fetch,
-              child: const Text('Refresh'),
             ),
+          ),
+        ],
+      ),
+    );
           ],
         ),
       ),

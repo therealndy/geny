@@ -573,13 +573,14 @@ class GenyBrain:
         if lookup_term:
             found = self.lookup_offline(lookup_term)
             if found:
-                # build a creative, personal reply that includes sources
                 parts = []
-                for src, text in found.items():
-                    parts.append(f"[{src}] {text}")
-                base = "\n\n".join(parts)
+                if isinstance(found, dict):
+                    for src, text in found.items():
+                        parts.append(f"[{src}] {text}")
+                    base = "\n\n".join(parts)
+                else:
+                    base = str(found)
                 reply = add_personal_touch(base, prefix="Jag tänker såhär...")
-                # record interaction and save
                 entry = {"timestamp": now, "message": message, "reply": reply, "source": "offline_libs"}
                 async with self._lock:
                     self.memory.setdefault("interactions", []).append(entry)
