@@ -384,61 +384,34 @@ class _AgeTabState extends State<AgeTab> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Geny Chat',
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: Color(0xFF181A20),
-        colorScheme: ColorScheme.dark(
-          primary: Color(0xFF7F5AF0),
-          secondary: Color(0xFF2CB67D),
-          background: Color(0xFF181A20),
-          surface: Color(0xFF181A20),
-        ),
-        textTheme: const TextTheme(
-          bodyLarge: TextStyle(color: Colors.white, fontSize: 18),
-          bodyMedium: TextStyle(color: Colors.white70, fontSize: 16),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Color(0xFF181A20),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
-            borderSide: BorderSide.none,
-          ),
-        ),
-      ),
-      home: Stack(
-        children: [
-          const ChatScreen(),
-          // Status indicator overlay
-          Positioned(
-            top: 16,
-            right: 16,
-            child: Builder(
-              builder: (context) {
-                // Only show indicator if ChatScreen is in the widget tree
-                final chatScreenState = context.findAncestorStateOfType<_ChatScreenState>();
-                final backendOk = chatScreenState?._backendOk ?? false;
-                return Container(
-                  width: 18,
-                  height: 18,
-                  decoration: BoxDecoration(
-                    color: backendOk ? Colors.green : Colors.red,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        blurRadius: 4,
-                      ),
-                    ],
-                  ),
-                );
-              },
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Age', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white)),
+            const SizedBox(height: 16),
+            if (loading)
+              const CircularProgressIndicator()
+            else if (error != null)
+              Text(error!, style: TextStyle(color: Colors.red, fontSize: 16))
+            else if (age != null) ...[
+              Text('Geny was created:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              const SizedBox(height: 8),
+              Text(age!["created"]?.toString() ?? '', style: TextStyle(fontSize: 18, color: Colors.white70)),
+              const SizedBox(height: 12),
+              Text('Geny is:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              const SizedBox(height: 8),
+              Text(age!["age"]?.toString() ?? '', style: TextStyle(fontSize: 18, color: Colors.white70)),
+            ],
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: loading ? null : _fetch,
+              child: const Text('Refresh'),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
