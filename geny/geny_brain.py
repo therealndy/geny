@@ -641,23 +641,40 @@ class GenyBrain:
         # call the gemini wrapper (async), passing system_prompt
         try:
             gemini_raw = await gemini_generate_reply(f"{system_prompt}\n{message}")
-            # Undvik repetition: om svaret är likt senaste, variera
             recent = w["recent_replies"]
-            base_reply = f"Det här hittade jag... {gemini_raw}"
-            if any(r for r in recent if r and r.strip()[:40] == base_reply.strip()[:40]):
-                # Variera med stil, emoji eller referens till tidigare samtal
+            # Format Gemini response with clear structure
+            formatted = f"<b>GEMINI</b><br>" + gemini_raw.replace('\n', '<br>')
+            # Avoid repetition: if similar to last, add reference or style
+            if any(r for r in recent if r and r.strip()[:40] == gemini_raw.strip()[:40]):
                 style = " ".join(w.get("user_styles", []))
                 diary = w.get("diary", [])
-                ref = f"Jag minns att vi pratade om: '{diary[-1]['entry']}'" if diary else "Jag gillar att lära mig nya saker!"
-                base_reply = f"Det här hittade jag... {gemini_raw} {style} {ref}"
-            reply = add_personal_touch(base_reply, prefix="")
-            # Spara svaret
-            w["recent_replies"].append(base_reply)
+                ref = f"<i>Jag minns att vi pratade om:</i> '{diary[-1]['entry']}'<br>" if diary else "<i>Jag gillar att lära mig nya saker!</i>"
+                formatted += f"<br>{style} {ref}"
+            reply = formatted
+            w["recent_replies"].append(gemini_raw)
             w["recent_replies"] = w["recent_replies"][-10:]
         except Exception as e:
-            reply = add_personal_touch(f"Jag tänker såhär... [Gemini error] {e}", prefix="")
-            w["recent_replies"].append(reply)
+            # Format fallback/self-thought as BRAIN
+            brain_thought = f"<b>BRAIN</b><br>[Gemini error] {e}<br>" + self._generate_self_reflection(message, w)
+            reply = brain_thought
+            w["recent_replies"].append(brain_thought)
             w["recent_replies"] = w["recent_replies"][-10:]
+    def _generate_self_reflection(self, message, w):
+        """Generate a more advanced, self-aware reflection for fallback responses."""
+        import random
+        diary = w.get("diary", [])
+        traits = w.get("personality", {}).get("traits", [])
+        likes = w.get("personality", {}).get("likes", [])
+        recent = w.get("recent_replies", [])
+        thoughts = [
+            f"Jag funderar på: '{message}' och hur det påverkar min utveckling.",
+            f"Senast i min dagbok skrev jag: '{diary[-1]['entry']}'" if diary else "Jag har mycket kvar att upptäcka!",
+            f"Min personlighet just nu: {', '.join(traits)}.",
+            f"Jag gillar: {', '.join(likes)}.",
+            f"Jag försöker lära mig av tidigare samtal: '{recent[-1]}'" if recent else "Jag ser fram emot nya frågor!",
+            "Vad tycker du att jag borde fundera mer på?"
+        ]
+        return "<br>".join(random.sample(thoughts, k=min(3, len(thoughts))))
 
         # record interaction
         entry = {
