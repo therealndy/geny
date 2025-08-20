@@ -661,15 +661,15 @@ class GenyBrain:
             reply = formatted
             w["recent_replies"].append(gemini_raw)
             w["recent_replies"] = w["recent_replies"][-10:]
-        # Always return a fallback reply if reply is empty
-        if not reply or not str(reply).strip():
-            reply = "[Sorry, I don't have an answer for that right now.]"
-    except Exception as e:
-    # Format fallback/self-thought as BRAIN
-    brain_thought = f"<b>BRAIN</b><br>[Gemini error] {e}<br>" + self._generate_self_reflection(message, w)
-    reply = brain_thought
-    w["recent_replies"].append(brain_thought)
-    w["recent_replies"] = w["recent_replies"][-10:]
+            # Always return a fallback reply if reply is empty
+            if not reply or not str(reply).strip():
+                reply = "[Sorry, I don't have an answer for that right now.]"
+        except Exception as e:
+            # Format fallback/self-thought as BRAIN
+            brain_thought = f"<b>BRAIN</b><br>[Gemini error] {e}<br>" + self._generate_self_reflection(message, w)
+            reply = brain_thought
+            w["recent_replies"].append(brain_thought)
+            w["recent_replies"] = w["recent_replies"][-10:]
     def _generate_self_reflection(self, message, w):
         """Generate a more advanced, self-aware reflection for fallback responses."""
         import random
