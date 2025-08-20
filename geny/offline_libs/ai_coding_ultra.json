@@ -1,0 +1,22 @@
+{
+  "overview": "Extensive guide covering advanced AI topics and practical coding patterns across languages (Python, Java, Shell). Includes architecture notes, model training tips, evaluation best-practices, and compact code recipes for common tasks.",
+  "model_architectures": "Transformer architectures, attention mechanisms, encoder-decoder vs decoder-only tradeoffs, scaling laws, parameter-efficient fine-tuning (LoRA/Adapters), quantization and pruning strategies for deployment.",
+  "training_recipes": "Data curation (deduplication, filtering, dedup-aware tokenization), mixed-precision training, learning rate schedules, gradient clipping, distributed data-parallel training, checkpointing and reproducibility practices.",
+  "evaluation_metrics": "Perplexity, BLEU, ROUGE, F1, precision/recall for structured tasks, calibration metrics, human eval protocols, adversarial robustness tests, and A/B testing for interactive systems.",
+  "deployment_notes": "Model serving patterns (batch vs streaming), latency vs throughput tradeoffs, model sharding, ONNX/TF Lite/TF Serving, quantized inference, monitoring (latency, input distribution drift), and safe-fallback mechanisms.",
+  "best_practices": "Sanity-check small models first, run unit tests for data pipelines, version datasets, log hyperparameters, and build small reproducible examples before scaling up.",
+  "examples": {
+    "python_infer_simple": "from transformers import AutoTokenizer, AutoModelForCausalLM\nimport torch\n\n# simple inference example\n\ntokenizer = AutoTokenizer.from_pretrained('gpt2')\nmodel = AutoModelForCausalLM.from_pretrained('gpt2')\ninputs = tokenizer('Hello world', return_tensors='pt')\nwith torch.no_grad():\n    out = model.generate(**inputs, max_length=20)\nprint(tokenizer.decode(out[0], skip_special_tokens=True))",
+    "python_train_snippet": "# minimal training loop with PyTorch\nimport torch\nfrom torch.utils.data import DataLoader\n\n# ... dataset/dataloader creation ...\noptimizer = torch.optim.Adam(model.parameters(), lr=1e-4)\nfor epoch in range(3):\n    for batch in DataLoader(train_dataset, batch_size=8):\n        inputs = batch['input_ids'].to(device)\n        labels = batch['labels'].to(device)\n        outputs = model(inputs, labels=labels)\n        loss = outputs.loss\n        loss.backward()\n        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)\n        optimizer.step()\n        optimizer.zero_grad()",
+    "java_example_socket": "// simple TCP client in Java\nimport java.io.*;\nimport java.net.*;\npublic class SimpleClient {\n  public static void main(String[] args) throws Exception {\n    Socket s = new Socket(\\\"127.0.0.1\\\", 8000);\n    PrintWriter out = new PrintWriter(s.getOutputStream(), true);\n    BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));\n    out.println(\\\"Hello from Java\\\");\n    System.out.println(in.readLine());\n    s.close();\n  }\n}",
+    "shell_pipe_example": "# download, extract, and count lines of CSV with zsh/bash\nwget -qO- https://example.com/data.csv.gz | gunzip -c | awk -F, 'NR>1{print $1}' | wc -l"
+  ,"c_hello_world": "#include <stdio.h>\nint main() { printf(\"Hello, world!\\n\"); return 0; }",
+  "rust_fizzbuzz": "fn main() { for i in 1..=100 { match (i%3, i%5) { (0,0)=>println!(\"FizzBuzz\"), (0,_)=>println!(\"Fizz\"), (_,0)=>println!(\"Buzz\"), _=>println!(\"{}\",i)}} }",
+  "go_http_server": "package main\nimport (\n  \"net/http\"\n  \"log\"\n)\nfunc main() {\n  http.HandleFunc(\"/\", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(\"Hello from Go!\")) })\n  log.Fatal(http.ListenAndServe(\":8080\", nil))\n}",
+  "js_fetch": "fetch('https://api.example.com/data').then(r=>r.json()).then(console.log);",
+  "sql_select": "SELECT name, age FROM users WHERE active = 1 ORDER BY age DESC;"
+  },
+  "advanced_patterns": "Prompt engineering patterns, context window management (rolling windows, summarization), retrieval-augmented generation (RAG) patterns, vector store indexing, and hybrid search (BM25 + embeddings).",
+  "security_privacy": "Differential privacy considerations, data minimization, secure handling of PII, and network/credentials best practices for production deployments.",
+  "references": "Papers and resources: Attention is All You Need, BERT, GPT series, LoRA, Adapters, MLPerf, Hugging Face docs, ONNX Runtime; many open-source toolkits like Transformers, PEFT, DeepSpeed, and Hugging Face Accelerate."
+}

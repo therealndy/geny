@@ -1,0 +1,22 @@
+{
+  "imagenet": "A large visual database designed for use in visual object recognition research. Contains millions of labeled images organized according to the WordNet hierarchy. Commonly used to pretrain convolutional neural networks for transfer learning.",
+  "coco": "The COCO (Common Objects in Context) dataset: a large-scale object detection, segmentation, and captioning dataset. It contains complex everyday scenes with common objects in their natural context and richly annotated segmentation masks and captions.",
+  "openai_gpt_datasets": "Large curated text corpora used to train transformer-based language models: diverse web crawls, filtered CommonCrawl slices, books, code repositories, and high-quality human annotations. These datasets emphasize scale, diversity, and careful filtering to improve generation quality.",
+  "wikipedia_corpus": "An extracted dump of Wikipedia articles used as a high-quality source of factual knowledge and natural language sentences. Often cleaned, tokenized, and deduplicated before training language models.",
+  "wmt": "The WMT (Workshop on Machine Translation) datasets — parallel corpora used for training and evaluating statistical and neural machine translation systems across many language pairs.",
+  "kaggle_datasets": "A broad collection of datasets across domains (tabular finance, health, images, text) available through the Kaggle platform. Often used for benchmarking, competitions, and prototyping data science workflows.",
+  "imagenet21k": "An expanded version of ImageNet with ~14 million images and 21k classes (used in some large-scale vision experiments). Useful for pretraining but requires careful handling due to size and label noise.",
+  "mlcommons_tiny_imagenet": "A compact subset used for fast experimentation and benchmarking, preserving a subset of ImageNet's structure for quick model iteration.",
+  "schema_org_corpus": "Structured information scraped from websites annotated with Schema.org. Useful for knowledge extraction and building semantic QA models.",
+  "open_images": "A dataset of ~9 million images annotated with image-level labels and bounding boxes. Useful for detection and classification tasks at scale.",
+  "squad": "Stanford Question Answering Dataset: a reading comprehension dataset consisting of questions posed by crowdworkers on Wikipedia articles, where the answer to every question is a segment of text from the corresponding reading passage.",
+  "librispeech": "A corpus of approximately 1000 hours of 16kHz read English speech, used for training and evaluating automatic speech recognition systems.",
+  "mnist": "A classic dataset of handwritten digits (0-9) used for image classification and deep learning benchmarking.",
+  "cifar10": "A dataset of 60,000 32x32 color images in 10 classes, with 6,000 images per class. Used for image classification benchmarking.",
+  "cityscapes": "A large-scale dataset for semantic urban scene understanding, with pixel-level annotations of 5,000 images recorded in street scenes from 50 different cities.",
+  "commoncrawl": "A regularly updated web archive containing petabytes of crawled web data, used for large-scale language model pretraining.",
+  "laion-5b": "A dataset of 5 billion CLIP-filtered image-text pairs, used for training large-scale multimodal models.",
+  "wikitext-103": "A large language modeling dataset consisting of over 100 million tokens extracted from Wikipedia articles.",
+  "msmarco": "A large-scale dataset for machine reading comprehension and passage ranking, based on real anonymized Bing search queries and results.",
+  "humaneval": "A dataset of Python programming problems and solutions, used for evaluating code generation models."
+}

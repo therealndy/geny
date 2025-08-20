@@ -1,0 +1,1 @@
+ /Users/macbook/Documents/Py\ Stuff/new_geny/android_app/.dart_tool/flutter_build/87d12b8a635e45e5523dfbfd96d0ccdf/native_assets.json: 

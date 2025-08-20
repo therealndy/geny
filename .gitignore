@@ -1,0 +1,21 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+*.log
+nohop.out
+backend/nohup.out
+
+.DS_Store
+.vscode/
+.idea/
+*.iml
+
+# Secrets
+key.json
+vertex-key.json
