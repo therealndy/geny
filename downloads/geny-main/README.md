@@ -1,2 +1,0 @@
-# geny
-Ai assistant
