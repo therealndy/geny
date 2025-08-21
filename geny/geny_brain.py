@@ -408,7 +408,7 @@ class GenyBrain:
             entry = {"timestamp": now, "message": message, "reply": reply, "source": "identity"}
             async with self._lock:
                 self.memory.setdefault("interactions", []).append(entry)
-                asyncio.create_task(self._async_save())
+                self.save_memory()
             return reply
         # Robust greeting detection: reply with dynamic personality/brain summary
         if ("geny" in msg_lc and any(greet in msg_lc for greet in ["hi", "hello", "hey"])) or msg_lc in ["hi", "hello", "hey"]:
