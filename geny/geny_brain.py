@@ -728,65 +728,65 @@ class GenyBrain:
                 return reply
         # World update logic
         if any(alias in message for alias in ["Andreas", "Adi", "Jamsheree"]):
-            w["experiences"].append({
-                "event": "Conversation with Andreas",
-                "timestamp": now,
-                "description": "Fick ett meddelande från min skapare."
-            })
-            if any(word in message.lower() for word in ["feedback", "tips", "förbättra", "improve"]):
-                w.setdefault("diary", []).append({
-                    "date": now,
-                    "insight": f"Fick feedback från Andreas: {message}"
-                })
-        for rel in w.get("relations", []):
-            if rel.get("type") and rel["type"].lower() in message.lower() or rel["name"].lower() in message.lower():
-                w["experiences"].append({
-                    "event": f"Conversation with {rel['name']}",
-                    "timestamp": now,
-                    "description": f"Diskuterade {rel.get('expertise', ['okänt'])[0]}."
-                })
-        if any(word in message.lower() for word in ["idé", "innovation", "nytt förslag", "suggestion", "idea"]):
             w.setdefault("objects", []).append({
                 "name": f"Idéfrö: {message[:30]}",
                 "description": f"En idé från samtal: {message}",
                 "acquired_at": now
             })
-        if any(word in message.lower() for word in ["lärde", "upptäckte", "insikt", "learned", "discovered", "insight"]):
-            w.setdefault("diary", []).append({
-                "date": now,
-                "insight": f"Lärde mig: {message}"
-            })
-        if w.get("experiences", []):
-            last = w["experiences"][-1]["timestamp"]
+            # 4. Om Geny lär sig något nytt, skriv i dagboken
+            if any(word in message.lower() for word in ["lärde", "upptäckte", "insikt", "learned", "discovered", "insight"]):
+                w.setdefault("diary", []).append({
+                    "date": now,
+                    "insight": f"Lärde mig: {message}"
+                })
+            # 5. Simulera tidens gång (öka dag om det gått > 12h sedan senaste erfarenhet)
+            if w.get("experiences", []):
+                last = w["experiences"][-1]["timestamp"]
+                try:
+                    from datetime import datetime as dt
+                    last_dt = dt.fromisoformat(last)
+                    now_dt = dt.fromisoformat(now)
+                    if (now_dt - last_dt).total_seconds() > 43200:
+                        w["time"]["current_day"] += 1
+                        w["time"]["days_active"] += 1
+                except Exception:
+                    pass
+
+            # 6. Bygg systemprompt med världsinformation
+            system_prompt = self.build_system_prompt()
+
+            # call the gemini wrapper (async), passing system_prompt
             try:
-                from datetime import datetime as dt
-                last_dt = dt.fromisoformat(last)
-                now_dt = dt.fromisoformat(now)
-                if (now_dt - last_dt).total_seconds() > 43200:
-                    w["time"]["current_day"] += 1
-                    w["time"]["days_active"] += 1
-            except Exception:
-                pass
-        system_prompt = self.build_system_prompt()
-        try:
-            logger.info(f"Calling Gemini API with prompt: {system_prompt}\n{message}")
-            gemini_raw = await gemini_generate_reply(f"{system_prompt}\n{message}")
-            logger.info(f"Gemini raw response: {gemini_raw}")
-            recent = w.setdefault("recent_replies", [])
-            if not gemini_raw or not str(gemini_raw).strip():
-                logger.warning("Gemini returned empty reply. Using fallback.")
-                if any(kw in message.lower() for kw in ["search the web", "find on the web", "google", "internet", "browse"]):
-                    reply = "BRAIN - Gemini can't search the web or browse the internet."
+                logger.info(f"Calling Gemini API with prompt: {system_prompt}\n{message}")
+                gemini_raw = await gemini_generate_reply(f"{system_prompt}\n{message}")
+                logger.info(f"Gemini raw response: {gemini_raw}")
+                recent = w.setdefault("recent_replies", [])
+                # Validate Gemini response
+                if not gemini_raw or not str(gemini_raw).strip():
+                    logger.warning("Gemini returned empty reply. Using fallback.")
+                    if any(kw in message.lower() for kw in ["search the web", "find on the web", "google", "internet", "browse"]):
+                        reply = "BRAIN - Gemini can't search the web or browse the internet."
+                    else:
+                        reply = "BRAIN - Gemini is out right now."
+                elif gemini_raw.startswith("[Gemini error]") or gemini_raw.startswith("[Gemini 401]") or "not connected" in gemini_raw:
+                    logger.error(f"Gemini API failure: {gemini_raw}")
+                    reply = f"BRAIN - Gemini is out right now."
                 else:
-                    reply = "BRAIN - Gemini is out right now."
-            elif gemini_raw.startswith("[Gemini error]") or gemini_raw.startswith("[Gemini 401]") or "not connected" in gemini_raw:
-                logger.error(f"Gemini API failure: {gemini_raw}")
-                reply = f"BRAIN - Gemini is out right now."
-            else:
-                is_code = any(
-                    kw in gemini_raw.lower() for kw in ["import ", "def ", "class ", "torch.", "transformers", "print(", "for ", "if ", "while ", "model.", "tokenizer."]
-                )
-                if is_code:
+                    is_code = any(
+                        kw in gemini_raw.lower() for kw in ["import ", "def ", "class ", "torch.", "transformers", "print(", "for ", "if ", "while ", "model.", "tokenizer."]
+                    )
+                    if is_code:
+                        formatted = f"BRAIN - <pre>{gemini_raw}</pre>"
+                        formatted += "<br><i>Do you want an explanation of the code?</i>"
+                    else:
+                        formatted = f"BRAIN - " + gemini_raw.replace('\n', '<br>')
+                    if any(r for r in recent if r and r.strip()[:40] == gemini_raw.strip()[:40]):
+                        style = " ".join(w.get("user_styles", []))
+                        diary = w.get("diary", [])
+                        ref = f"<i>I remember we talked about:</i> '{diary[-1]['entry']}'<br>" if diary else "<i>I like learning new things!</i>"
+                        formatted += f"<br>{style} {ref}"
+                    reply = formatted
+                w.setdefault("recent_replies", []).append(gemini_raw if gemini_raw else reply)
                     formatted = f"BRAIN - <pre>{gemini_raw}</pre>"
                     formatted += "<br><i>Do you want an explanation of the code?</i>"
                 else:
