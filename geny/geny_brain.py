@@ -778,19 +778,6 @@ class GenyBrain:
             w["recent_replies"] = w["recent_replies"][-10:]
     self.save_interaction(message, reply)
     return reply
-
-        # Always return a valid reply
-        if not message or message.strip() == "":
-            logger.warning("Geny received empty or null message. Returning fallback reply.")
-            return "BRAIN - Sorry, I didn't catch that. Could you please rephrase?"
-        # Always initialize 'w' before use
-        w = self.memory.get("world", {})
-        # Special handling for 'Are you Gemini?' and similar questions
-        msg_lc = message.strip().lower()
-        if any(kw in msg_lc for kw in ["are you gemini", "are you google gemini", "are you google ai", "are you an ai", "are you an assistant"]):
-            reply = "BRAIN - I am Geny, powered by Google Gemini."
-            now = datetime.utcnow().isoformat()
-            entry = {"timestamp": now, "message": message, "reply": reply, "source": "identity"}
             async with self._lock:
                 self.memory.setdefault("interactions", []).append(entry)
                 asyncio.create_task(self._async_save())
