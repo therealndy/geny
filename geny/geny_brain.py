@@ -426,18 +426,18 @@ class GenyBrain:
             return "BRAIN - Sorry, I didn't catch that. Could you please rephrase?"
         # Always initialize 'w' before use
         w = self.memory.get("world", {})
-            lower = message.strip().lower()
-            # Load all stored memories before generating reply
-            all_memories = self.load_all_memories()
-            all_interactions = []
-            for mem in all_memories.values():
-                if isinstance(mem, dict) and "interactions" in mem:
-                    all_interactions.extend(mem["interactions"])
-            # Helper: search for relevant past messages
-            def search_memories(query):
-                results = []
-                for entry in all_interactions:
-                    if query.lower() in entry.get("message", "").lower() or query.lower() in entry.get("reply", "").lower():
+        lower = message.strip().lower()
+        # Load all stored memories before generating reply
+        all_memories = self.load_all_memories()
+        all_interactions = []
+        for mem in all_memories.values():
+            if isinstance(mem, dict) and "interactions" in mem:
+                all_interactions.extend(mem["interactions"])
+        # Helper: search for relevant past messages
+        def search_memories(query):
+            results = []
+            for entry in all_interactions:
+                if query.lower() in entry.get("message", "").lower() or query.lower() in entry.get("reply", "").lower():
                         results.append(entry)
                 return results
 
