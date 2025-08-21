@@ -26,6 +26,11 @@ from geny.gemini_api import generate_reply as gemini_generate_reply
 class GenyBrain:
     def __init__(self):
         self.memory_module = MemoryModule()
+        # Ensure self.memory is always initialized
+        try:
+            self.memory = self.memory_module.load_memory_dict() if hasattr(self.memory_module, 'load_memory_dict') else {}
+        except Exception:
+            self.memory = {}
 
     def save_interaction(self, message: str, reply: str) -> None:
         """Save every message and reply using MemoryModule (SQLite+JSON)."""
