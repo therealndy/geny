@@ -117,6 +117,11 @@ async def _call_gemini(prompt: str, max_retries: int = 3, timeout: int = None) -
                 text = await asyncio.wait_for(asyncio.to_thread(blocking_call), timeout=timeout)
             else:
                 text = await asyncio.to_thread(blocking_call)
+            # Ensure we always return a string
+            try:
+                text = "" if text is None else str(text)
+            except Exception:
+                text = ""
             logger.info("Gemini reply received (len=%d)", len(text))
             _circuit.record_success()
             return text
@@ -147,7 +152,11 @@ async def generate_reply(prompt: str, *, max_retries: int = 3, timeout: Optional
     """
     # If we have an API key, call the real Gemini client
     if API_KEY:
-        return await _call_gemini(prompt, max_retries=max_retries, timeout=timeout)
+        result = await _call_gemini(prompt, max_retries=max_retries, timeout=timeout)
+        try:
+            return str(result) if result is not None else ""
+        except Exception:
+            return ""
 
     await asyncio.sleep(0)
     # Extract user message

@@ -148,11 +148,14 @@ class GenyBrain:
         abs_path = os.path.abspath(self.memory_file)
         logging.info(f"GenyBrain loading memory file from: {abs_path}")
         try:
-            with open(abs_path, "r", encoding="utf-8") as f:
-                self.memory = json.load(f)
+            # Prefer MemoryModule loader if available
+            if hasattr(self, 'memory_module') and hasattr(self.memory_module, 'load_memory_dict'):
+                self.memory = self.memory_module.load_memory_dict()
+            else:
+                with open(abs_path, "r", encoding="utf-8") as f:
+                    self.memory = json.load(f)
         except Exception as e:
             logging.error(f"Error loading memory file {abs_path}: {e}")
-            # if corrupted, start fresh
             self.memory = {}
         # ensure interactions list exists
         self.memory.setdefault("interactions", [])
@@ -355,6 +358,13 @@ class GenyBrain:
 
     def save_memory(self) -> None:
         """Synchronous atomic save (safe to call from sync code)."""
+        try:
+            if hasattr(self, 'memory_module') and hasattr(self.memory_module, 'save_memory_dict'):
+                self.memory_module.save_memory_dict(self.memory)
+                return
+        except Exception:
+            pass
+        # Fallback to local atomic save
         tmp_fd, tmp_path = tempfile.mkstemp(dir=".")
         try:
             with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
@@ -434,13 +444,12 @@ class GenyBrain:
         w = self.memory.get("world", {})
         lower = message.strip().lower()
         try:
-            # Load all stored memories before generating reply
-            all_memories = self.load_all_memories()
-            all_interactions = []
-            for mem in all_memories.values():
-                if isinstance(mem, dict) and "interactions" in mem:
-                    all_interactions.extend(mem["interactions"])
-            logger.info(f"Loaded {len(all_interactions)} interactions from {len(all_memories)} memory files.")
+            # Load recent interactions from MemoryModule (SQLite) for listing/search
+            try:
+                all_interactions = self.memory_module.get_last_n(10000)
+            except Exception:
+                all_interactions = []
+            logger.info(f"Loaded {len(all_interactions)} interactions from MemoryModule.")
             # Helper: search for relevant past messages
             def search_memories(query):
                 results = []
@@ -479,7 +488,10 @@ class GenyBrain:
             if lower.startswith("do you remember") or lower.startswith("what did we talk about"):
                 topic = message.replace("do you remember","").replace("what did we talk about","").strip()
                 if topic:
-                    found = search_memories(topic)
+                    try:
+                        found = self.memory_module.search(topic)
+                    except Exception:
+                        found = search_memories(topic)
                     if found:
                         summary = f"I remember we talked about '{topic}' on these occasions:<br>"
                         for entry in found:
@@ -808,32 +820,6 @@ class GenyBrain:
                 return reply
             # Always return reply at the end
             return reply
-            recent = diary[-1]["entry"] if diary else "I have a lot left to discover."
-            # Remove duplicate 'Recent reflection:' and repeated adjectives
-            mood = ""
-            if recent.startswith("Reflected on my mood:"):
-                mood_text = recent.replace("Reflected on my mood: ", "")
-                adjectives = []
-                for word in mood_text.split():
-                    if word in traits_list and word not in adjectives:
-                        adjectives.append(word)
-                if adjectives:
-                    mood = f"I feel {', '.join(adjectives)} today!"
-                # Add only unique sentences
-                if "How are you?" in mood_text:
-                    mood += " How are you?"
-                if "It's exciting to get new questions!" in mood_text:
-                    mood += " It's exciting to get new questions!"
-            base = "Hi!"
-            if mood:
-                base += f" {mood}"
-            reply = add_personal_touch(base.strip(), prefix="BRAIN -")
-            now = datetime.utcnow().isoformat()
-            entry = {"timestamp": now, "message": message, "reply": reply, "source": "greeting"}
-            async with self._lock:
-                self.memory.setdefault("interactions", []).append(entry)
-                asyncio.create_task(self._async_save())
-            return reply
         # If user asks about personality, reply with traits
         if any(kw in msg_lc for kw in ["personality", "traits", "what are you like", "describe yourself"]):
             traits_list = w.get("personality", {}).get("traits", [])
@@ -1022,102 +1008,7 @@ class GenyBrain:
                     asyncio.create_task(self._async_save())
                 return reply
 
-        # World update logic
-        # 1. Om Andreas skriver, lägg till erfarenhet och feedback
-        if any(alias in message for alias in ["Andreas", "Adi", "Jamsheree"]):
-            w["experiences"].append({
-                "event": "Conversation with Andreas",
-                "timestamp": now,
-                "description": "Fick ett meddelande från min skapare."
-            })
-            # Om feedback ges, spara i dagboken
-            if any(word in message.lower() for word in ["feedback", "tips", "förbättra", "improve"]):
-                w.setdefault("diary", []).append({
-                    "date": now,
-                    "insight": f"Fick feedback från Andreas: {message}"
-                })
-        # 2. Om expert nämns, skapa dialog och spara erfarenhet
-    for rel in w.get("relations", []):
-        if rel.get("type") and rel["type"].lower() in message.lower() or rel["name"].lower() in message.lower():
-            w["experiences"].append({
-                "event": f"Conversation with {rel['name']}",
-                "timestamp": now,
-                "description": f"Diskuterade {rel.get('expertise', ['okänt'])[0]}."
-            })
-    # 3. Om ny idé, spara som idéfrö
-    if any(word in message.lower() for word in ["idé", "innovation", "nytt förslag", "suggestion", "idea"]):
-        w.setdefault("objects", []).append({
-            "name": f"Idéfrö: {message[:30]}",
-            "description": f"En idé från samtal: {message}",
-            "acquired_at": now
-        })
-    # 4. Om Geny lär sig något nytt, skriv i dagboken
-    if any(word in message.lower() for word in ["lärde", "upptäckte", "insikt", "learned", "discovered", "insight"]):
-        w.setdefault("diary", []).append({
-            "date": now,
-            "insight": f"Lärde mig: {message}"
-        })
-        # 5. Simulera tidens gång (öka dag om det gått > 12h sedan senaste erfarenhet)
-        if w["experiences"]:
-            last = w["experiences"][-1]["timestamp"]
-            try:
-                from datetime import datetime as dt
-                last_dt = dt.fromisoformat(last)
-                now_dt = dt.fromisoformat(now)
-                if (now_dt - last_dt).total_seconds() > 43200:
-                    w["time"]["current_day"] += 1
-                    w["time"]["days_active"] += 1
-            except Exception:
-                pass
-
-        # 6. Bygg systemprompt med världsinformation
-        system_prompt = self.build_system_prompt()
-
-        # call the gemini wrapper (async), passing system_prompt
-        try:
-            logger.info(f"Calling Gemini API with prompt: {system_prompt}\n{message}")
-            gemini_raw = await gemini_generate_reply(f"{system_prompt}\n{message}")
-            logger.info(f"Gemini raw response: {gemini_raw}")
-            recent = w["recent_replies"]
-            # Validate Gemini response
-            if not gemini_raw or not str(gemini_raw).strip():
-                logger.warning("Gemini returned empty reply. Using fallback.")
-                if any(kw in message.lower() for kw in ["search the web", "find on the web", "google", "internet", "browse"]):
-                    reply = "BRAIN - Gemini can't search the web or browse the internet."
-                else:
-                    reply = "BRAIN - Gemini is out right now."
-            elif gemini_raw.startswith("[Gemini error]") or gemini_raw.startswith("[Gemini 401]") or "not connected" in gemini_raw:
-                logger.error(f"Gemini API failure: {gemini_raw}")
-                reply = f"BRAIN - Gemini is out right now."
-            else:
-                # Detect code block (simple heuristic)
-                is_code = any(
-                    kw in gemini_raw.lower() for kw in ["import ", "def ", "class ", "torch.", "transformers", "print(", "for ", "if ", "while ", "model.", "tokenizer."]
-                )
-                if is_code:
-                    formatted = f"BRAIN - <pre>{gemini_raw}</pre>"
-                    formatted += "<br><i>Do you want an explanation of the code?</i>"
-                else:
-                    formatted = f"BRAIN - " + gemini_raw.replace('\n', '<br>')
-                # Avoid repetition: if similar to last, add reference or style
-                if any(r for r in recent if r and r.strip()[:40] == gemini_raw.strip()[:40]):
-                    style = " ".join(w.get("user_styles", []))
-                    diary = w.get("diary", [])
-                    ref = f"<i>I remember we talked about:</i> '{diary[-1]['entry']}'<br>" if diary else "<i>I like learning new things!</i>"
-                    formatted += f"<br>{style} {ref}"
-                reply = formatted
-            w["recent_replies"].append(gemini_raw if gemini_raw else reply)
-            w["recent_replies"] = w["recent_replies"][-10:]
-            # Final safety net: always return a meaningful reply
-            if not reply or not str(reply).strip():
-                logger.warning("Final safety net triggered: empty reply.")
-                reply = "BRAIN - Sorry, I don't have an answer for that right now."
-            logger.info(f"Final reply to user: {reply}")
-        except Exception as e:
-            logger.error(f"Exception in Gemini call: {e}", exc_info=True)
-            reply = f"BRAIN - Gemini is out right now. ({e})"
-            w["recent_replies"].append(reply)
-            w["recent_replies"] = w["recent_replies"][-10:]
+        
     def _generate_self_reflection(self, message, w):
         """Generate a more advanced, self-aware reflection for fallback responses."""
         import random

@@ -36,7 +36,15 @@ async def chat(req: ChatRequest):
     logger.info(f"/chat endpoint received: {req.message}")
     try:
         reply = await brain.generate_reply(req.message)
+        # Coerce None to safe fallback
+        if reply is None:
+            reply = "BRAIN - Sorry, I couldn't generate a reply right now."
         logger.info(f"Geny reply: {reply}")
+        # Always persist the interaction via MemoryModule for consistency
+        try:
+            brain.save_interaction(req.message, reply)
+        except Exception:
+            logger.exception("Failed to persist interaction")
         if isinstance(reply, str) and reply.startswith("[Gemini 401]"):
             logger.error("Gemini 401 error")
             raise HTTPException(status_code=502, detail="Upstream authentication error")

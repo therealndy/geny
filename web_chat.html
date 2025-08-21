@@ -21,7 +21,7 @@
     <h2>Geny Web Chat</h2>
     <div id="messages"></div>
     <div id="inputRow">
-      <input id="msgInput" type="text" placeholder="Type your message..." autofocus />
+  <textarea id="msgInput" rows="2" placeholder="Type your message..." autofocus style="resize:vertical;width:100%;font-size:16px;padding:10px;border-radius:6px;border:none;"></textarea>
       <button id="sendBtn">Send</button>
     </div>
   </div>
@@ -69,7 +69,17 @@
     };
 
     input.addEventListener('keydown', e => {
-      if (e.key === 'Enter') sendBtn.click();
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendBtn.click();
+      } else if (e.key === 'Enter' && e.shiftKey) {
+        // Insert line break
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        input.value = input.value.substring(0, start) + "\n" + input.value.substring(end);
+        input.selectionStart = input.selectionEnd = start + 1;
+        e.preventDefault();
+      }
     });
   </script>
 </body>
