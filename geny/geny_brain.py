@@ -425,10 +425,21 @@ class GenyBrain:
                     mood += " It's exciting to get new questions!"
             base = "Hi!"
             if mood:
-                base += f"\n{mood}"
-            reply = add_personal_touch(base, prefix="BRAIN -")
+                base += f" {mood}"
+            reply = add_personal_touch(base.strip(), prefix="BRAIN -")
             now = datetime.utcnow().isoformat()
             entry = {"timestamp": now, "message": message, "reply": reply, "source": "greeting"}
+            async with self._lock:
+                self.memory.setdefault("interactions", []).append(entry)
+                asyncio.create_task(self._async_save())
+            return reply
+        # If user asks about personality, reply with traits
+        if any(kw in msg_lc for kw in ["personality", "traits", "what are you like", "describe yourself"]):
+            traits_list = w.get("personality", {}).get("traits", [])
+            traits = ", ".join(traits_list)
+            reply = add_personal_touch(f"My personality is {traits}.", prefix="BRAIN -")
+            now = datetime.utcnow().isoformat()
+            entry = {"timestamp": now, "message": message, "reply": reply, "source": "personality"}
             async with self._lock:
                 self.memory.setdefault("interactions", []).append(entry)
                 asyncio.create_task(self._async_save())
