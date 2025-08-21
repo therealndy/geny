@@ -580,7 +580,7 @@ class GenyBrain:
             else:
                 reflection = "I have a lot left to discover."
             base = f"I am {traits}, like {likes}, dislike {dislikes}. {reflection}"
-            reply = add_personal_touch(base, prefix="I think...")
+            reply = add_personal_touch(base, prefix="BRAIN -")
             w["diary"].append({"date": now, "entry": f"Reflected on my personality."})
             entry = {"timestamp": now, "message": message, "reply": reply, "source": "offline_fallback"}
             async with self._lock:
@@ -614,7 +614,7 @@ class GenyBrain:
                     base = "\n\n".join(parts)
                 else:
                     base = str(found)
-                reply = add_personal_touch(base, prefix="I think...")
+                reply = add_personal_touch(base, prefix="BRAIN -")
                 entry = {"timestamp": now, "message": message, "reply": reply, "source": "offline_libs"}
                 async with self._lock:
                     self.memory.setdefault("interactions", []).append(entry)
@@ -704,7 +704,7 @@ class GenyBrain:
             # Always return a fallback reply if reply is empty
             if not reply or not str(reply).strip():
                 logging.warning("Gemini returned empty reply. Using fallback.")
-                reply = "BRAIN - Gemini is not responding right now. Please check the connection or try again later."
+                reply = "BRAIN - Gemini is out right now."
         except Exception as e:
             import logging
             logging.error(f"Exception in Gemini call: {e}")
