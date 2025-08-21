@@ -10,25 +10,15 @@ def test_placeholder():
 
 from geny import gemini_api
 def test_gemini_circuit_breaker(monkeypatch):
-    # Replace the genai.Client with a fake client whose send_message raises.
-
-    class FakeChat:
-        def send_message(self, *_args, **_kwargs):
+    # Replace the genai.GenerativeModel with a fake model whose generate_content raises.
+    class FakeModel:
+        def __init__(self, model_name):
+            pass
+        def generate_content(self, prompt):
             raise Exception("API key not valid")
 
-    class FakeChats:
-        def create(self, model):
-            return FakeChat()
-
-    class FakeClient:
-        def __init__(self, api_key=None):
-            pass
-
-        chats = FakeChats()
-
-    # Monkeypatch the Client constructor used in the gemini wrapper
-    monkeypatch.setattr(gemini_api.genai, "Client", FakeClient)
+    monkeypatch.setattr(gemini_api.genai, "GenerativeModel", FakeModel)
 
     # Run the wrapper; it should catch underlying exceptions and return an error string
-    reply = asyncio.run(gemini_api.gemini_generate_reply("test prompt", max_retries=1))
+    reply = asyncio.run(gemini_api.generate_reply("test prompt", max_retries=1))
     assert reply.startswith("[Gemini") or isinstance(reply, str)

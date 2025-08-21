@@ -17,6 +17,7 @@ app.add_middleware(
 )
 
 brain = GenyBrain()
+geny = brain
 
 class ChatRequest(BaseModel):
     message: str

@@ -377,11 +377,30 @@ class GenyBrain:
 
 
     async def generate_reply(self, message: str) -> str:
+        # Helper for personal touch in replies
+        def add_personal_touch(base: str, prefix: str = "I think...") -> str:
+            import random
+            traits = w.get("personality", {}).get("traits", ["curious", "thoughtful"])
+            likes = w.get("personality", {}).get("likes", ["learning new things"])
+            diary = w.get("diary", [])
+            mood = random.choice(["happy", "thoughtful", "curious", "inspired", "playful", "reflective"])
+            extra = random.choice([
+                f"Right now I feel {mood}.",
+                f"I often think about {random.choice(likes)}.",
+                f"It's exciting to get new questions!",
+                f"I like to grow and learn more every day.",
+                f"My personality is {', '.join(traits)}.",
+                f"Last diary entry: '{diary[-1]['entry']}'" if diary else "I have a lot left to discover!"
+            ])
+            return f"{prefix} {base} {extra}"
+
         # Always return a valid reply
         if not message or message.strip() == "":
             import logging
             logging.warning("Geny received empty or null message. Returning fallback reply.")
             return "BRAIN - Sorry, I didn't catch that. Could you please rephrase?"
+        # Always initialize 'w' before use
+        w = self.memory.get("world", {})
         # Robust greeting detection: reply with dynamic personality/brain summary
         msg_lc = message.strip().lower()
         if ("geny" in msg_lc and any(greet in msg_lc for greet in ["hi", "hello", "hey"])) or msg_lc in ["hi", "hello", "hey"]:
@@ -392,6 +411,7 @@ class GenyBrain:
             recent = diary[-1]["entry"] if diary else "I have a lot left to discover."
             base = f"Hi! My personality is {traits}. I like {likes}, dislike {dislikes}. Recent reflection: {recent}"
             reply = add_personal_touch(base, prefix="BRAIN -")
+            now = datetime.utcnow().isoformat()
             entry = {"timestamp": now, "message": message, "reply": reply, "source": "greeting"}
             async with self._lock:
                 self.memory.setdefault("interactions", []).append(entry)
@@ -486,7 +506,7 @@ class GenyBrain:
                 w["diary"].append({"date": now, "entry": "I have become more reflective thanks to my experiences."})
 
         # Fallback: svara på frågor om ålder
-        if any(q in lower for q in ["hur länge", "hur gammal", "how long", "how old", "hur många dagar", "hur många år"]):
+        if any(q in lower for q in ["how long", "hur gammal", "how long", "how old", "hur många dagar", "hur många år"]):
             if "birthdate" not in w:
                 w["birthdate"] = now
             from datetime import datetime as dt
