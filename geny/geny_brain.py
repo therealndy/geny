@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from memory import MemoryModule
 import os
 import tempfile
 from dataclasses import dataclass, field
@@ -23,33 +24,17 @@ from geny.gemini_api import generate_reply as gemini_generate_reply
 
 @dataclass
 class GenyBrain:
+    def __post_init__(self):
+        self.memory_module = MemoryModule()
+
     def save_interaction(self, message: str, reply: str) -> None:
-        """Save every message and reply to memory.json instantly."""
-        from datetime import datetime
-        entry = {
-            "timestamp": datetime.utcnow().isoformat(),
-            "message": message,
-            "reply": reply
-        }
-        self.memory.setdefault("interactions", []).append(entry)
-        self.save_memory()
+        """Save every message and reply using MemoryModule (SQLite+JSON)."""
+        self.memory_module.save_interaction(message, reply)
 
     def load_all_memories(self) -> dict:
-        """Load all .json files in the memory directory as possible memory sources."""
-        import os, json, logging
-        mem_dir = os.path.dirname(os.path.abspath(self.memory_file))
-        logging.info(f"GenyBrain loading all memory files from directory: {mem_dir}")
-        memories = {}
-        for fname in os.listdir(mem_dir):
-            if fname.endswith(".json"):
-                fpath = os.path.join(mem_dir, fname)
-                try:
-                    with open(fpath, "r", encoding="utf-8") as f:
-                        memories[fname] = json.load(f)
-                except Exception as e:
-                    logging.error(f"Error loading memory file {fpath}: {e}")
-                    continue
-        return memories
+        """Load all interactions from MemoryModule (SQLite)."""
+        interactions = self.memory_module.get_last_n(10000)  # Load all
+        return {"interactions": interactions}
 
     def get_virtual_age(self) -> dict:
         """Return age in years, days, hours, minutes since birthdate."""
@@ -806,11 +791,13 @@ class GenyBrain:
             # FINAL fallback: always return a friendly reply if nothing else matched
             if not reply or not str(reply).strip():
                 reply = "BRAIN - I'm here and listening! Could you tell me more or ask a question?"
-            now = datetime.utcnow().isoformat()
-            entry = {"timestamp": now, "message": message, "reply": reply, "source": "fallback"}
-            async with self._lock:
-                self.memory.setdefault("interactions", []).append(entry)
-                asyncio.create_task(self._async_save())
+                now = datetime.utcnow().isoformat()
+                entry = {"timestamp": now, "message": message, "reply": reply, "source": "fallback"}
+                async with self._lock:
+                    self.memory.setdefault("interactions", []).append(entry)
+                    asyncio.create_task(self._async_save())
+                return reply
+            # Always return reply at the end
             return reply
             recent = diary[-1]["entry"] if diary else "I have a lot left to discover."
             # Remove duplicate 'Recent reflection:' and repeated adjectives
