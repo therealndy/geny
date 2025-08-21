@@ -1048,7 +1048,7 @@ class GenyBrain:
                     "insight": f"Fick feedback från Andreas: {message}"
                 })
         # 2. Om expert nämns, skapa dialog och spara erfarenhet
-        for rel in w["relations"]:
+    for rel in w.get("relations", []):
             if rel.get("type") and rel["type"].lower() in message.lower() or rel["name"].lower() in message.lower():
                 w["experiences"].append({
                     "event": f"Conversation with {rel['name']}",
