@@ -159,7 +159,7 @@ class GenyBrain:
         t = re.sub(r'^(what is|define|explain)\s+', '', t)
         t = re.sub(r"[^\wüéèáàâçñøÆØ]+", " ", t)
         t = " ".join(tok for tok in t.split() if tok)
-        # Language detection removed (English only)
+    # English only
         code_keywords = ["python", "java", "shell", "sql", "go", "rust", "c", "training", "loop", "snippet", "example", "transformers"]
         t_lc = t.lower()
         # Try to extract a direct token if multi-word
@@ -203,7 +203,7 @@ class GenyBrain:
                         for val in v.values():
                             if isinstance(val, str):
                                 return val
-            # För kodfrågor: försök direktmatcha på nyckel i nested dicts
+        # For code questions: try direct key match in nested dicts
             if "ai_coding_ultra" in libname.lower():
                 for k2, v2 in mapping.items():
                     if isinstance(v2, dict):
@@ -561,10 +561,11 @@ class GenyBrain:
 
         # Check if the message looks like an offline lookup request.
         lookup_term = None
-        if lower.startswith("vad är "):
+        # Remove Swedish lookup triggers
+        if lower.startswith("define "):
             lookup_term = message.strip()[7:]
-        elif lower.startswith("vad betyder "):
-            lookup_term = message.strip()[13:]
+        elif lower.startswith("explain "):
+            lookup_term = message.strip()[8:]
         elif lower.startswith("define "):
             lookup_term = message.strip()[7:]
         elif lower.startswith("explain "):
