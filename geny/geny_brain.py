@@ -455,7 +455,8 @@ class GenyBrain:
                     recent = all_interactions[-5:]
                     summary = "Here are my last 5 memories:<br>"
                     for entry in recent:
-                        summary += f"[{entry.get('timestamp','')}] '{entry.get('message','')}'<br>"
+                        summary += f"[{entry.get('timestamp','')}] User: '{entry.get('message','')}'<br>"
+                        summary += f"[{entry.get('timestamp','')}] Geny: '{entry.get('reply','')}'<br>"
                     reply = f"BRAIN - {summary}"
                     return reply
                 else:
@@ -466,7 +467,8 @@ class GenyBrain:
                 if all_interactions:
                     summary = "Here are all my memories:<br>"
                     for entry in all_interactions:
-                        summary += f"[{entry.get('timestamp','')}] '{entry.get('message','')}'<br>"
+                        summary += f"[{entry.get('timestamp','')}] User: '{entry.get('message','')}'<br>"
+                        summary += f"[{entry.get('timestamp','')}] Geny: '{entry.get('reply','')}'<br>"
                     reply = f"BRAIN - {summary}"
                     return reply
                 else:
@@ -480,7 +482,8 @@ class GenyBrain:
                     if found:
                         summary = f"I remember we talked about '{topic}' on these occasions:<br>"
                         for entry in found:
-                            summary += f"[{entry.get('timestamp','')}] '{entry.get('message','')}'<br>"
+                            summary += f"[{entry.get('timestamp','')}] User: '{entry.get('message','')}'<br>"
+                            summary += f"[{entry.get('timestamp','')}] Geny: '{entry.get('reply','')}'<br>"
                         reply = f"BRAIN - {summary}"
                         return reply
                     else:
@@ -1143,7 +1146,26 @@ class GenyBrain:
             f"I've saved {len(diary)} diary entries about my development.",
             f"I often wonder: '{random.choice(questions)}'"
         ]
-        return "<br>".join(random.sample(thoughts, k=min(4, len(thoughts)))) if thoughts else ""
+        reflection = "<br>".join(random.sample(thoughts, k=min(4, len(thoughts)))) if thoughts else ""
+        # Save self-reflection to thoughts.json
+        import os, json
+        thoughts_path = os.path.join(os.path.dirname(self.memory_file), "thoughts.json")
+        try:
+            if os.path.exists(thoughts_path):
+                with open(thoughts_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+            else:
+                data = {"thoughts": []}
+            data["thoughts"].append({
+                "timestamp": datetime.utcnow().isoformat(),
+                "reflection": reflection,
+                "message": message
+            })
+            with open(thoughts_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            pass
+        return reflection
 
     def generate_daily_summary(self) -> Dict[str, Any]:
         """Return a tiny summary derived from stored interactions.
