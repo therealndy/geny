@@ -97,7 +97,7 @@ async def _call_gemini(prompt: str, max_retries: int = 3, timeout: int = 15) -> 
         logger.warning("Circuit breaker open; failing fast")
         return "[Gemini error] Circuit open - upstream unavailable"
 
-    system_prompt = "Du är Geny, en AI-assistent med empati och intelligens. Svara kort och hjälpsamt."
+    system_prompt = "You are Geny, an empathetic and intelligent AI assistant. Reply briefly and helpfully in English."
 
     last_err = None
     for attempt in range(max_retries):

@@ -379,6 +379,8 @@ class GenyBrain:
     async def generate_reply(self, message: str) -> str:
         # Always return a valid reply
         if not message or message.strip() == "":
+            import logging
+            logging.warning("Geny received empty or null message. Returning fallback reply.")
             return "BRAIN - Sorry, I didn't catch that. Could you please rephrase?"
         # Robust greeting detection: reply with dynamic personality/brain summary
         msg_lc = message.strip().lower()
@@ -658,31 +660,40 @@ class GenyBrain:
 
         # call the gemini wrapper (async), passing system_prompt
         try:
+            import logging
             gemini_raw = await gemini_generate_reply(f"{system_prompt}\n{message}")
             recent = w["recent_replies"]
-            # Detect code block (simple heuristic)
-            is_code = any(
-                kw in gemini_raw.lower() for kw in ["import ", "def ", "class ", "torch.", "transformers", "print(", "for ", "if ", "while ", "model.", "tokenizer."]
-            )
-            if is_code:
-                formatted = f"<b>GEMINI</b><br><pre>{gemini_raw}</pre>"
-                # Add explanation prompt
-                formatted += "<br><i>Do you want an explanation of the code?</i>"
+            # Explicit error reporting if Gemini returns error or fallback
+            if gemini_raw.startswith("[Gemini error]") or gemini_raw.startswith("[Gemini 401]") or "not connected" in gemini_raw:
+                logging.error(f"Gemini API failure: {gemini_raw}")
+                reply = f"<b>GEMINI ERROR</b><br>{gemini_raw}<br><i>Geny is not connected to Gemini. Please check API key and backend logs.</i>"
             else:
-                formatted = f"<b>GEMINI</b><br>" + gemini_raw.replace('\n', '<br>')
-            # Avoid repetition: if similar to last, add reference or style
-            if any(r for r in recent if r and r.strip()[:40] == gemini_raw.strip()[:40]):
-                style = " ".join(w.get("user_styles", []))
-                diary = w.get("diary", [])
-                ref = f"<i>I remember we talked about:</i> '{diary[-1]['entry']}'<br>" if diary else "<i>I like learning new things!</i>"
-                formatted += f"<br>{style} {ref}"
-            reply = formatted
+                # Detect code block (simple heuristic)
+                is_code = any(
+                    kw in gemini_raw.lower() for kw in ["import ", "def ", "class ", "torch.", "transformers", "print(", "for ", "if ", "while ", "model.", "tokenizer."]
+                )
+                if is_code:
+                    formatted = f"<b>GEMINI</b><br><pre>{gemini_raw}</pre>"
+                    # Add explanation prompt
+                    formatted += "<br><i>Do you want an explanation of the code?</i>"
+                else:
+                    formatted = f"<b>GEMINI</b><br>" + gemini_raw.replace('\n', '<br>')
+                # Avoid repetition: if similar to last, add reference or style
+                if any(r for r in recent if r and r.strip()[:40] == gemini_raw.strip()[:40]):
+                    style = " ".join(w.get("user_styles", []))
+                    diary = w.get("diary", [])
+                    ref = f"<i>I remember we talked about:</i> '{diary[-1]['entry']}'<br>" if diary else "<i>I like learning new things!</i>"
+                    formatted += f"<br>{style} {ref}"
+                reply = formatted
             w["recent_replies"].append(gemini_raw)
             w["recent_replies"] = w["recent_replies"][-10:]
             # Always return a fallback reply if reply is empty
             if not reply or not str(reply).strip():
+                logging.warning("Gemini returned empty reply. Using fallback.")
                 reply = "[Sorry, I don't have an answer for that right now.]"
         except Exception as e:
+            import logging
+            logging.error(f"Exception in Gemini call: {e}")
             # Format fallback/self-thought as BRAIN
             brain_thought = f"<b>BRAIN</b><br>[Gemini error] {e}<br>" + self._generate_self_reflection(message, w)
             reply = brain_thought
