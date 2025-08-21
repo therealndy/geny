@@ -578,7 +578,7 @@ class GenyBrain:
         if "recent_replies" not in w:
             w["recent_replies"] = []
         now = datetime.utcnow().isoformat()
-    w = self.memory.get("world", {})
+        w = self.memory.get("world", {})
         lower = message.strip().lower()
         # Initialize personality and diary if missing (English only)
         if "personality" not in w:
