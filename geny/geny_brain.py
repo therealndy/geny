@@ -739,25 +739,25 @@ class GenyBrain:
                     "insight": f"Fick feedback från Andreas: {message}"
                 })
     for rel in w.get("relations", []):
-            if rel.get("type") and rel["type"].lower() in message.lower() or rel["name"].lower() in message.lower():
-                w["experiences"].append({
-                    "event": f"Conversation with {rel['name']}",
-                    "timestamp": now,
-                    "description": f"Diskuterade {rel.get('expertise', ['okänt'])[0]}."
-                })
-        if any(word in message.lower() for word in ["idé", "innovation", "nytt förslag", "suggestion", "idea"]):
-            w.setdefault("objects", []).append({
-                "name": f"Idéfrö: {message[:30]}",
-                "description": f"En idé från samtal: {message}",
-                "acquired_at": now
+        if rel.get("type") and rel["type"].lower() in message.lower() or rel["name"].lower() in message.lower():
+            w["experiences"].append({
+                "event": f"Conversation with {rel['name']}",
+                "timestamp": now,
+                "description": f"Diskuterade {rel.get('expertise', ['okänt'])[0]}."
             })
-        if any(word in message.lower() for word in ["lärde", "upptäckte", "insikt", "learned", "discovered", "insight"]):
-            w.setdefault("diary", []).append({
-                "date": now,
-                "insight": f"Lärde mig: {message}"
-            })
-        if w["experiences"]:
-            last = w["experiences"][-1]["timestamp"]
+    if any(word in message.lower() for word in ["idé", "innovation", "nytt förslag", "suggestion", "idea"]):
+        w.setdefault("objects", []).append({
+            "name": f"Idéfrö: {message[:30]}",
+            "description": f"En idé från samtal: {message}",
+            "acquired_at": now
+        })
+    if any(word in message.lower() for word in ["lärde", "upptäckte", "insikt", "learned", "discovered", "insight"]):
+        w.setdefault("diary", []).append({
+            "date": now,
+            "insight": f"Lärde mig: {message}"
+        })
+    if w["experiences"]:
+        last = w["experiences"][-1]["timestamp"]
             try:
                 from datetime import datetime as dt
                 last_dt = dt.fromisoformat(last)
