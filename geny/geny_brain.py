@@ -856,7 +856,7 @@ class GenyBrain:
                 asyncio.create_task(self._async_save())
             return reply
         # Save typical expressions and emojis from user (English only)
-    w = self.memory.get("world", {})
+        w = self.memory.get("world", {})
         if "user_styles" not in w:
             w["user_styles"] = []
         import re
