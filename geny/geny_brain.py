@@ -36,9 +36,9 @@ class GenyBrain:
 
     def load_all_memories(self) -> dict:
         """Load all .json files in the memory directory as possible memory sources."""
-        import os, json
-        # Use the directory containing the main memory file
+        import os, json, logging
         mem_dir = os.path.dirname(os.path.abspath(self.memory_file))
+        logging.info(f"GenyBrain loading all memory files from directory: {mem_dir}")
         memories = {}
         for fname in os.listdir(mem_dir):
             if fname.endswith(".json"):
@@ -46,7 +46,8 @@ class GenyBrain:
                 try:
                     with open(fpath, "r", encoding="utf-8") as f:
                         memories[fname] = json.load(f)
-                except Exception:
+                except Exception as e:
+                    logging.error(f"Error loading memory file {fpath}: {e}")
                     continue
         return memories
 
@@ -141,11 +142,15 @@ class GenyBrain:
     memory: Dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
+        import logging, os
         self._lock = asyncio.Lock()
+        abs_path = os.path.abspath(self.memory_file)
+        logging.info(f"GenyBrain loading memory file from: {abs_path}")
         try:
-            with open(self.memory_file, "r", encoding="utf-8") as f:
+            with open(abs_path, "r", encoding="utf-8") as f:
                 self.memory = json.load(f)
-        except Exception:
+        except Exception as e:
+            logging.error(f"Error loading memory file {abs_path}: {e}")
             # if corrupted, start fresh
             self.memory = {}
         # ensure interactions list exists
