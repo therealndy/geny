@@ -24,7 +24,7 @@ from geny.gemini_api import generate_reply as gemini_generate_reply
 
 @dataclass
 class GenyBrain:
-    def __post_init__(self):
+    def __init__(self):
         self.memory_module = MemoryModule()
 
     def save_interaction(self, message: str, reply: str) -> None:
