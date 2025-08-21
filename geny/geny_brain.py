@@ -470,8 +470,8 @@ class GenyBrain:
             w["personality"]["traits"].append("reflective")
             w["diary"].append({"date": now, "entry": "I have become more reflective thanks to my experiences."})
 
-    # Fallback: answer questions about age
-    if any(q in lower for q in ["how long", "how old"]):
+        # Fallback: answer questions about age
+        if any(q in lower for q in ["how long", "how old"]):
             if "birthdate" not in w:
                 w["birthdate"] = now
             from datetime import datetime as dt
