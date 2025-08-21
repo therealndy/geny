@@ -87,7 +87,7 @@ def _jittered_backoff(attempt: int, base: float = 0.5, cap: float = 10.0) -> flo
     return expo * (0.5 + random.random() * 0.5)
 
 
-async def _call_gemini(prompt: str, max_retries: int = 3, timeout: int = 15) -> str:
+async def _call_gemini(prompt: str, max_retries: int = 3, timeout: int = None) -> str:
     if not API_KEY:
         msg = "[Gemini error] Missing API key. Set GENAI_API_KEY or configure Secret Manager."
         logger.error(msg)
@@ -113,7 +113,10 @@ async def _call_gemini(prompt: str, max_retries: int = 3, timeout: int = 15) -> 
             return str(response)
 
         try:
-            text = await asyncio.wait_for(asyncio.to_thread(blocking_call), timeout=timeout)
+            if timeout:
+                text = await asyncio.wait_for(asyncio.to_thread(blocking_call), timeout=timeout)
+            else:
+                text = await asyncio.to_thread(blocking_call)
             logger.info("Gemini reply received (len=%d)", len(text))
             _circuit.record_success()
             return text

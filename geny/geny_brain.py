@@ -78,18 +78,18 @@ class GenyBrain:
         """Return a short, readable summary of Geny's life events and learning."""
         w = self.memory.get("world", {})
         diary = w.get("diary", [])
-        # Ta de 5 senaste viktiga händelserna, snyggt formatterat
+    # Take the 5 most important recent events, formatted nicely
         events = []
         for entry in diary[-5:]:
             date = entry.get("date", "?")
             text = entry.get("entry", "")
             events.append(f"{date[:10]}: {text}")
         summary = "\n".join(events) if events else "No important events yet."
-        # Lägg till en kort summering av personlighet och mål
-        traits = ", ".join(w.get("personality", {}).get("traits", []))
-        likes = ", ".join(w.get("personality", {}).get("likes", []))
-        summary_text = f"Personality: {traits}. Likes: {likes}.\nRecent events:\n{summary}"
-        return {"summary": summary_text, "events": events}
+    # Add a short summary of personality and goals
+    traits = ", ".join(w.get("personality", {}).get("traits", []))
+    likes = ", ".join(w.get("personality", {}).get("likes", []))
+    summary_text = f"Personality: {traits}. Likes: {likes}.\nRecent events:\n{summary}"
+    return {"summary": summary_text, "events": events}
 
     def get_relations(self) -> dict:
         """Return a summary of Geny's relations, their status, and what she learns from them."""
@@ -611,7 +611,7 @@ class GenyBrain:
         # 1. Om Andreas skriver, lägg till erfarenhet och feedback
         if any(alias in message for alias in ["Andreas", "Adi", "Jamsheree"]):
             w["experiences"].append({
-                "event": "Samtal med Andreas",
+                "event": "Conversation with Andreas",
                 "timestamp": now,
                 "description": "Fick ett meddelande från min skapare."
             })
@@ -625,7 +625,7 @@ class GenyBrain:
         for rel in w["relations"]:
             if rel.get("type") and rel["type"].lower() in message.lower() or rel["name"].lower() in message.lower():
                 w["experiences"].append({
-                    "event": f"Samtal med {rel['name']}",
+                    "event": f"Conversation with {rel['name']}",
                     "timestamp": now,
                     "description": f"Diskuterade {rel.get('expertise', ['okänt'])[0]}."
                 })
