@@ -772,7 +772,7 @@ class GenyBrain:
             logger.info(f"Calling Gemini API with prompt: {system_prompt}\n{message}")
             gemini_raw = await gemini_generate_reply(f"{system_prompt}\n{message}")
             logger.info(f"Gemini raw response: {gemini_raw}")
-            recent = w["recent_replies"]
+            recent = w.setdefault("recent_replies", [])
             if not gemini_raw or not str(gemini_raw).strip():
                 logger.warning("Gemini returned empty reply. Using fallback.")
                 if any(kw in message.lower() for kw in ["search the web", "find on the web", "google", "internet", "browse"]):
@@ -797,7 +797,7 @@ class GenyBrain:
                     ref = f"<i>I remember we talked about:</i> '{diary[-1]['entry']}'<br>" if diary else "<i>I like learning new things!</i>"
                     formatted += f"<br>{style} {ref}"
                 reply = formatted
-            w["recent_replies"].append(gemini_raw if gemini_raw else reply)
+            w.setdefault("recent_replies", []).append(gemini_raw if gemini_raw else reply)
             w["recent_replies"] = w["recent_replies"][-10:]
             if not reply or not str(reply).strip():
                 logger.warning("Final safety net triggered: empty reply.")
@@ -806,7 +806,7 @@ class GenyBrain:
         except Exception as e:
             logger.error(f"Exception in Gemini call: {e}", exc_info=True)
             reply = f"BRAIN - Gemini is out right now. ({e})"
-            w["recent_replies"].append(reply)
+            w.setdefault("recent_replies", []).append(reply)
             w["recent_replies"] = w["recent_replies"][-10:]
             # FINAL fallback: always return a friendly reply if nothing else matched
             if not reply or not str(reply).strip():
