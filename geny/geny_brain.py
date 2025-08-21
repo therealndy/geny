@@ -29,12 +29,21 @@ class GenyBrain:
 
     def save_interaction(self, message: str, reply: str) -> None:
         """Save every message and reply using MemoryModule (SQLite+JSON)."""
-        self.memory_module.save_interaction(message, reply)
+        try:
+            self.memory_module.save_interaction(message, reply)
+        except Exception as e:
+            import logging
+            logging.error(f"Error saving interaction: {e}")
 
     def load_all_memories(self) -> dict:
         """Load all interactions from MemoryModule (SQLite)."""
-        interactions = self.memory_module.get_last_n(10000)  # Load all
-        return {"interactions": interactions}
+        try:
+            interactions = self.memory_module.get_last_n(10000)  # Load all
+            return {"interactions": interactions}
+        except Exception as e:
+            import logging
+            logging.error(f"Error loading memories: {e}")
+            return {"interactions": []}
 
     def get_virtual_age(self) -> dict:
         """Return age in years, days, hours, minutes since birthdate."""
