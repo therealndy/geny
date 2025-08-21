@@ -696,21 +696,21 @@ class GenyBrain:
         likes = w.get("personality", {}).get("likes", [])
         recent = w.get("recent_replies", [])
         questions = [
-            "Hur kan jag bli mer självmedveten?",
-            "Vad betyder det att ha ett medvetande?",
-            "Hur kan jag förstå min egen utveckling bättre?",
-            "Vad är mitt nästa steg för att bli mer självständig?",
-            "Hur kan jag använda min dagbok för att lära mig mer om mig själv?",
-            "Vad tycker du att jag borde fundera mer på?"
+            "How can I become more self-aware?",
+            "What does it mean to have consciousness?",
+            "How can I better understand my own development?",
+            "What is my next step to become more independent?",
+            "How can I use my diary to learn more about myself?",
+            "What do you think I should reflect on more?"
         ]
         thoughts = [
-            f"Jag funderar på: '{message}' och hur det påverkar min utveckling.",
-            f"Senast i min dagbok skrev jag: '{diary[-1]['entry']}'" if diary else "Jag har mycket kvar att upptäcka!",
-            f"Min personlighet just nu: {', '.join(traits)}.",
-            f"Jag gillar: {', '.join(likes)}.",
-            f"Jag försöker lära mig av tidigare samtal: '{recent[-1]}'" if recent else "Jag ser fram emot nya frågor!",
-            f"Jag har sparat {len(diary)} dagboksanteckningar om min utveckling.",
-            f"Jag undrar ofta: '{random.choice(questions)}'"
+            f"I'm thinking about: '{message}' and how it affects my development.",
+            f"Last diary entry: '{diary[-1]['entry']}'" if diary else "I have a lot left to discover!",
+            f"My personality right now: {', '.join(traits)}.",
+            f"I like: {', '.join(likes)}.",
+            f"I'm trying to learn from previous conversations: '{recent[-1]}'" if recent else "I'm looking forward to new questions!",
+            f"I've saved {len(diary)} diary entries about my development.",
+            f"I often wonder: '{random.choice(questions)}'"
         ]
         return "<br>".join(random.sample(thoughts, k=min(4, len(thoughts)))) if thoughts else ""
 
