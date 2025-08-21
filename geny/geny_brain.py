@@ -78,18 +78,18 @@ class GenyBrain:
         """Return a short, readable summary of Geny's life events and learning."""
         w = self.memory.get("world", {})
         diary = w.get("diary", [])
-    # Take the 5 most important recent events, formatted nicely
+        # Take the 5 most important recent events, formatted nicely
         events = []
         for entry in diary[-5:]:
             date = entry.get("date", "?")
             text = entry.get("entry", "")
             events.append(f"{date[:10]}: {text}")
         summary = "\n".join(events) if events else "No important events yet."
-    # Add a short summary of personality and goals
-    traits = ", ".join(w.get("personality", {}).get("traits", []))
-    likes = ", ".join(w.get("personality", {}).get("likes", []))
-    summary_text = f"Personality: {traits}. Likes: {likes}.\nRecent events:\n{summary}"
-    return {"summary": summary_text, "events": events}
+        # Add a short summary of personality and goals
+        traits = ", ".join(w.get("personality", {}).get("traits", []))
+        likes = ", ".join(w.get("personality", {}).get("likes", []))
+        summary_text = f"Personality: {traits}. Likes: {likes}.\nRecent events:\n{summary}"
+        return {"summary": summary_text, "events": events}
 
     def get_relations(self) -> dict:
         """Return a summary of Geny's relations, their status, and what she learns from them."""
