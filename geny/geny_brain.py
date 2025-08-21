@@ -448,36 +448,50 @@ class GenyBrain:
                         results.append(entry)
                 return results
 
-            # If user asks about early memories or what Geny remembers
-            if any(q in lower for q in ["earliest memory", "early memory", "first memory", "what do you remember", "do you remember", "previous conversation", "old conversation", "past conversation"]):
+
+            # If user asks for memories or past conversations, list last 5
+            if any(q in lower for q in ["memories", "past conversations", "what do you remember", "show me our conversations", "list memories", "list conversations"]):
                 if all_interactions:
-                    earliest = all_interactions[0]
-                    summary = f"My earliest memory is from {earliest.get('timestamp', 'unknown date')}: '{earliest.get('message', '')}'"
+                    recent = all_interactions[-5:]
+                    summary = "Here are my last 5 memories:<br>"
+                    for entry in recent:
+                        summary += f"[{entry.get('timestamp','')}] '{entry.get('message','')}'<br>"
                     reply = f"BRAIN - {summary}"
                     return reply
                 else:
                     return "BRAIN - I don't have any stored memories yet."
 
-            # If user asks about a specific topic Geny might remember
+            # If user asks for more, list all
+            if any(q in lower for q in ["show all", "list all", "show me all memories", "show me all conversations"]):
+                if all_interactions:
+                    summary = "Here are all my memories:<br>"
+                    for entry in all_interactions:
+                        summary += f"[{entry.get('timestamp','')}] '{entry.get('message','')}'<br>"
+                    reply = f"BRAIN - {summary}"
+                    return reply
+                else:
+                    return "BRAIN - I don't have any stored memories yet."
+
+            # If user asks about a specific topic, search memories
             if lower.startswith("do you remember") or lower.startswith("what did we talk about"):
                 topic = message.replace("do you remember","").replace("what did we talk about","").strip()
                 if topic:
                     found = search_memories(topic)
                     if found:
-                        summary = f"I remember we talked about '{topic}' on these occasions: "
-                        for entry in found[:3]:
-                            summary += f"[{entry.get('timestamp','')}] '{entry.get('message','')}' "
+                        summary = f"I remember we talked about '{topic}' on these occasions:<br>"
+                        for entry in found:
+                            summary += f"[{entry.get('timestamp','')}] '{entry.get('message','')}'<br>"
                         reply = f"BRAIN - {summary}"
                         return reply
                     else:
                         return f"BRAIN - I couldn't find a memory about '{topic}'. Could you remind me?"
                 else:
-                    # If no topic, summarize last few interactions
-                    recent = all_interactions[-3:] if all_interactions else []
+                    # If no topic, summarize last 5 interactions
+                    recent = all_interactions[-5:] if all_interactions else []
                     if recent:
-                        summary = "Here are some of our recent conversations: "
+                        summary = "Here are my last 5 memories:<br>"
                         for entry in recent:
-                            summary += f"[{entry.get('timestamp','')}] '{entry.get('message','')}' "
+                            summary += f"[{entry.get('timestamp','')}] '{entry.get('message','')}'<br>"
                         reply = f"BRAIN - {summary}"
                         return reply
                     else:
