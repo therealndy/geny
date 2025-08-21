@@ -540,8 +540,8 @@ class GenyBrain:
                 asyncio.create_task(self._async_save())
             return reply
 
-    # Fallback: answer questions about interests/personality
-    if any(q in lower for q in ["what do you like", "what is your personality"]):
+        # Fallback: answer questions about interests/personality
+        if any(q in lower for q in ["what do you like", "what is your personality"]):
             traits = ", ".join(w["personality"].get("traits", []))
             likes = ", ".join(w["personality"].get("likes", []))
             dislikes = ", ".join(w["personality"].get("dislikes", []))
