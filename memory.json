@@ -234,7 +234,7 @@
       "timestamp": "2025-08-21T14:46:00",
       "message": "Do you have a place where you save conversations in real-time to store offline and bring back up if needed?",
       "reply": "BRAIN - No, I don't currently save conversations in real-time for offline storage and retrieval. That's an interesting idea for persistent memory."
-    }
+  },
     {
       "timestamp": "2025-08-21T13:00:00",
       "message": "Hi Geny, i had to restart the server. can you tell me about your status?",
