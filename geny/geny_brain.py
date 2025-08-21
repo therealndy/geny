@@ -873,9 +873,9 @@ class GenyBrain:
             w["recent_replies"] = []
         """Ask Gemini for a reply, update world, store the interaction, and persist memory."""
 
-        now = datetime.utcnow().isoformat()
+    now = datetime.utcnow().isoformat()
     w = self.memory.get("world", {})
-        lower = message.strip().lower()
+    lower = message.strip().lower()
 
     # Remove duplicate add_personal_touch (use English-only version above)
 
