@@ -151,7 +151,7 @@ class GenyBrain:
             return
 
     def lookup_offline(self, term: str) -> str | None:
-    """Lookup a term in the offline libraries with fuzzy, substring, and weighted ranking. Returns best match as string."""
+        """Lookup a term in the offline libraries with fuzzy, substring, and weighted ranking. Returns best match as string."""
         import difflib
         import re
         # Normalize input
