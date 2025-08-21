@@ -399,8 +399,17 @@ class GenyBrain:
             return "BRAIN - Sorry, I didn't catch that. Could you please rephrase?"
         # Always initialize 'w' before use
         w = self.memory.get("world", {})
-        # Robust greeting detection: reply with dynamic personality/brain summary
+        # Special handling for 'Are you Gemini?' and similar questions
         msg_lc = message.strip().lower()
+        if any(kw in msg_lc for kw in ["are you gemini", "are you google gemini", "are you google ai", "are you an ai", "are you an assistant"]):
+            reply = "BRAIN - I am Geny, powered by Google Gemini."
+            now = datetime.utcnow().isoformat()
+            entry = {"timestamp": now, "message": message, "reply": reply, "source": "identity"}
+            async with self._lock:
+                self.memory.setdefault("interactions", []).append(entry)
+                asyncio.create_task(self._async_save())
+            return reply
+        # Robust greeting detection: reply with dynamic personality/brain summary
         if ("geny" in msg_lc and any(greet in msg_lc for greet in ["hi", "hello", "hey"])) or msg_lc in ["hi", "hello", "hey"]:
             traits_list = w.get("personality", {}).get("traits", [])
             traits = ", ".join(traits_list)
