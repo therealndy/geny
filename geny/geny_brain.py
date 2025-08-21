@@ -711,9 +711,13 @@ class GenyBrain:
                     base = str(found)
                 reply = add_personal_touch(base, prefix="BRAIN -")
                 entry = {"timestamp": now, "message": message, "reply": reply, "source": "offline_libs"}
-                async with self._lock:
-                    self.memory.setdefault("interactions", []).append(entry)
-                    asyncio.create_task(self._async_save())
+                # Synchronous fallback for non-async context
+                self.memory.setdefault("interactions", []).append(entry)
+                try:
+                    self._save()
+                except Exception as e:
+                    import logging
+                    logging.error(f"Error saving fallback interaction: {e}")
                 return reply
         # World update logic
         if any(alias in message for alias in ["Andreas", "Adi", "Jamsheree"]):
