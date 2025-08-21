@@ -402,12 +402,30 @@ class GenyBrain:
         # Robust greeting detection: reply with dynamic personality/brain summary
         msg_lc = message.strip().lower()
         if ("geny" in msg_lc and any(greet in msg_lc for greet in ["hi", "hello", "hey"])) or msg_lc in ["hi", "hello", "hey"]:
-            traits = ", ".join(w.get("personality", {}).get("traits", []))
+            traits_list = w.get("personality", {}).get("traits", [])
+            traits = ", ".join(traits_list)
             likes = ", ".join(w.get("personality", {}).get("likes", []))
             dislikes = ", ".join(w.get("personality", {}).get("dislikes", []))
             diary = w.get("diary", [])
             recent = diary[-1]["entry"] if diary else "I have a lot left to discover."
-            base = f"Hi!\nMy personality is {traits}.\nI like {likes}, dislike {dislikes}.\n\nRecent reflection: {recent}"
+            # Remove duplicate 'Recent reflection:' and repeated adjectives
+            mood = ""
+            if recent.startswith("Reflected on my mood:"):
+                mood_text = recent.replace("Reflected on my mood: ", "")
+                adjectives = []
+                for word in mood_text.split():
+                    if word in traits_list and word not in adjectives:
+                        adjectives.append(word)
+                if adjectives:
+                    mood = f"I feel {', '.join(adjectives)} today!"
+                # Add only unique sentences
+                if "How are you?" in mood_text:
+                    mood += " How are you?"
+                if "It's exciting to get new questions!" in mood_text:
+                    mood += " It's exciting to get new questions!"
+            base = f"Hi!\nMy personality is {traits}.\nI like {likes}, dislike {dislikes}."
+            if mood:
+                base += f"\n{mood}"
             reply = add_personal_touch(base, prefix="BRAIN -")
             now = datetime.utcnow().isoformat()
             entry = {"timestamp": now, "message": message, "reply": reply, "source": "greeting"}
