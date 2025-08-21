@@ -391,8 +391,8 @@ class GenyBrain:
                 f"My personality is {', '.join(traits)}.",
                 f"Last diary entry: '{diary[-1]['entry']}'" if diary else "I have a lot left to discover!"
             ])
-            # Elegant, line-break formatting
-            return f"{prefix}\n{base}\n{extra}"
+            # Always use HTML <br> for line breaks
+            return f"{prefix}<br>{base}<br>{extra}"
 
         # Always return a valid reply
         if not message or message.strip() == "":
