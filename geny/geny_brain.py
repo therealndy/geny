@@ -423,7 +423,7 @@ class GenyBrain:
                     mood += " How are you?"
                 if "It's exciting to get new questions!" in mood_text:
                     mood += " It's exciting to get new questions!"
-            base = f"Hi!\nMy personality is {traits}.\nI like {likes}, dislike {dislikes}."
+            base = "Hi!"
             if mood:
                 base += f"\n{mood}"
             reply = add_personal_touch(base, prefix="BRAIN -")
