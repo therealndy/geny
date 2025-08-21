@@ -27,6 +27,7 @@ class GenyBrain:
     def __init__(self):
         self.memory_module = MemoryModule()
         self._lock = asyncio.Lock()
+        self.offline_libs = {}  # Ensure offline_libs is always initialized
         # Ensure self.memory is always initialized
         try:
             self.memory = self.memory_module.load_memory_dict() if hasattr(self.memory_module, 'load_memory_dict') else {}
@@ -737,7 +738,7 @@ class GenyBrain:
                     "date": now,
                     "insight": f"Fick feedback från Andreas: {message}"
                 })
-        for rel in w["relations"]:
+    for rel in w.get("relations", []):
             if rel.get("type") and rel["type"].lower() in message.lower() or rel["name"].lower() in message.lower():
                 w["experiences"].append({
                     "event": f"Conversation with {rel['name']}",
