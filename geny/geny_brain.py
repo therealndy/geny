@@ -23,6 +23,32 @@ from geny.gemini_api import generate_reply as gemini_generate_reply
 
 @dataclass
 class GenyBrain:
+    def save_interaction(self, message: str, reply: str) -> None:
+        """Save every message and reply to memory.json instantly."""
+        from datetime import datetime
+        entry = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "message": message,
+            "reply": reply
+        }
+        self.memory.setdefault("interactions", []).append(entry)
+        self.save_memory()
+
+    def load_all_memories(self) -> dict:
+        """Load all .json files in the memory directory as possible memory sources."""
+        import os, json
+        # Use the directory containing the main memory file
+        mem_dir = os.path.dirname(os.path.abspath(self.memory_file))
+        memories = {}
+        for fname in os.listdir(mem_dir):
+            if fname.endswith(".json"):
+                fpath = os.path.join(mem_dir, fname)
+                try:
+                    with open(fpath, "r", encoding="utf-8") as f:
+                        memories[fname] = json.load(f)
+                except Exception:
+                    continue
+        return memories
 
     def get_virtual_age(self) -> dict:
         """Return age in years, days, hours, minutes since birthdate."""
@@ -400,6 +426,61 @@ class GenyBrain:
             return "BRAIN - Sorry, I didn't catch that. Could you please rephrase?"
         # Always initialize 'w' before use
         w = self.memory.get("world", {})
+            lower = message.strip().lower()
+            # Load all stored memories before generating reply
+            all_memories = self.load_all_memories()
+            all_interactions = []
+            for mem in all_memories.values():
+                if isinstance(mem, dict) and "interactions" in mem:
+                    all_interactions.extend(mem["interactions"])
+            # Helper: search for relevant past messages
+            def search_memories(query):
+                results = []
+                for entry in all_interactions:
+                    if query.lower() in entry.get("message", "").lower() or query.lower() in entry.get("reply", "").lower():
+                        results.append(entry)
+                return results
+
+            # If user asks about early memories or what Geny remembers
+            if any(q in lower for q in ["earliest memory", "early memory", "first memory", "what do you remember", "do you remember", "previous conversation", "old conversation", "past conversation"]):
+                if all_interactions:
+                    earliest = all_interactions[0]
+                    summary = f"My earliest memory is from {earliest.get('timestamp', 'unknown date')}: '{earliest.get('message', '')}'"
+                    reply = f"BRAIN - {summary}"
+                    return reply
+                else:
+                    return "BRAIN - I don't have any stored memories yet."
+
+            # If user asks about a specific topic Geny might remember
+            if lower.startswith("do you remember") or lower.startswith("what did we talk about"):
+                topic = message.replace("do you remember","").replace("what did we talk about","").strip()
+                if topic:
+                    found = search_memories(topic)
+                    if found:
+                        summary = f"I remember we talked about '{topic}' on these occasions: "
+                        for entry in found[:3]:
+                            summary += f"[{entry.get('timestamp','')}] '{entry.get('message','')}' "
+                        reply = f"BRAIN - {summary}"
+                        return reply
+                    else:
+                        return f"BRAIN - I couldn't find a memory about '{topic}'. Could you remind me?"
+                else:
+                    # If no topic, summarize last few interactions
+                    recent = all_interactions[-3:] if all_interactions else []
+                    if recent:
+                        summary = "Here are some of our recent conversations: "
+                        for entry in recent:
+                            summary += f"[{entry.get('timestamp','')}] '{entry.get('message','')}' "
+                        reply = f"BRAIN - {summary}"
+                        return reply
+                    else:
+                        return "BRAIN - I don't have any stored memories yet."
+
+            # Proactive recall: If current message matches a previous topic, bring it up
+            for entry in all_interactions[-10:]:
+                if entry.get("message") and entry["message"].lower() in lower:
+                    reply = f"BRAIN - I remember we discussed this before: '{entry['message']}' on {entry.get('timestamp','')}. Would you like to continue that conversation?"
+                    return reply
         # Special handling for 'Are you Gemini?' and similar questions
         msg_lc = message.strip().lower()
         if any(kw in msg_lc for kw in ["are you gemini", "are you google gemini", "are you google ai", "are you an ai", "are you an assistant"]):
@@ -695,7 +776,8 @@ class GenyBrain:
             reply = f"BRAIN - Gemini is out right now. ({e})"
             w["recent_replies"].append(reply)
             w["recent_replies"] = w["recent_replies"][-10:]
-        return reply
+    self.save_interaction(message, reply)
+    return reply
 
         # Always return a valid reply
         if not message or message.strip() == "":
