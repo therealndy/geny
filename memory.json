@@ -33,12 +33,12 @@
     {
       "timestamp": "2025-08-20T09:47:38.338170",
       "message": "live test: are you Geny?",
-      "reply": "Ja, det är jag. Jag är Geny."
+    "reply": "Ja, det är jag. Jag är Geny."
     },
     {
       "timestamp": "2025-08-20T09:49:15.877068",
       "message": "live test: are you Geny?",
-      "reply": "Ja, det stämmer. Jag är Geny. Hur kan jag hjälpa till?"
+  "reply": "Yes, that's correct. I am Geny. How can I help you?"
     },
     {
       "timestamp": "2025-08-20T09:50:10.656462",
