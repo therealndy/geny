@@ -1049,25 +1049,25 @@ class GenyBrain:
                 })
         # 2. Om expert nämns, skapa dialog och spara erfarenhet
     for rel in w.get("relations", []):
-            if rel.get("type") and rel["type"].lower() in message.lower() or rel["name"].lower() in message.lower():
-                w["experiences"].append({
-                    "event": f"Conversation with {rel['name']}",
-                    "timestamp": now,
-                    "description": f"Diskuterade {rel.get('expertise', ['okänt'])[0]}."
-                })
-        # 3. Om ny idé, spara som idéfrö
-        if any(word in message.lower() for word in ["idé", "innovation", "nytt förslag", "suggestion", "idea"]):
-            w.setdefault("objects", []).append({
-                "name": f"Idéfrö: {message[:30]}",
-                "description": f"En idé från samtal: {message}",
-                "acquired_at": now
+        if rel.get("type") and rel["type"].lower() in message.lower() or rel["name"].lower() in message.lower():
+            w["experiences"].append({
+                "event": f"Conversation with {rel['name']}",
+                "timestamp": now,
+                "description": f"Diskuterade {rel.get('expertise', ['okänt'])[0]}."
             })
-        # 4. Om Geny lär sig något nytt, skriv i dagboken
-        if any(word in message.lower() for word in ["lärde", "upptäckte", "insikt", "learned", "discovered", "insight"]):
-            w.setdefault("diary", []).append({
-                "date": now,
-                "insight": f"Lärde mig: {message}"
-            })
+    # 3. Om ny idé, spara som idéfrö
+    if any(word in message.lower() for word in ["idé", "innovation", "nytt förslag", "suggestion", "idea"]):
+        w.setdefault("objects", []).append({
+            "name": f"Idéfrö: {message[:30]}",
+            "description": f"En idé från samtal: {message}",
+            "acquired_at": now
+        })
+    # 4. Om Geny lär sig något nytt, skriv i dagboken
+    if any(word in message.lower() for word in ["lärde", "upptäckte", "insikt", "learned", "discovered", "insight"]):
+        w.setdefault("diary", []).append({
+            "date": now,
+            "insight": f"Lärde mig: {message}"
+        })
         # 5. Simulera tidens gång (öka dag om det gått > 12h sedan senaste erfarenhet)
         if w["experiences"]:
             last = w["experiences"][-1]["timestamp"]
