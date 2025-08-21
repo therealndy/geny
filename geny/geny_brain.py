@@ -787,17 +787,6 @@ class GenyBrain:
                         formatted += f"<br>{style} {ref}"
                     reply = formatted
                 w.setdefault("recent_replies", []).append(gemini_raw if gemini_raw else reply)
-                    formatted = f"BRAIN - <pre>{gemini_raw}</pre>"
-                    formatted += "<br><i>Do you want an explanation of the code?</i>"
-                else:
-                    formatted = f"BRAIN - " + gemini_raw.replace('\n', '<br>')
-                if any(r for r in recent if r and r.strip()[:40] == gemini_raw.strip()[:40]):
-                    style = " ".join(w.get("user_styles", []))
-                    diary = w.get("diary", [])
-                    ref = f"<i>I remember we talked about:</i> '{diary[-1]['entry']}'<br>" if diary else "<i>I like learning new things!</i>"
-                    formatted += f"<br>{style} {ref}"
-                reply = formatted
-            w.setdefault("recent_replies", []).append(gemini_raw if gemini_raw else reply)
             w["recent_replies"] = w["recent_replies"][-10:]
             if not reply or not str(reply).strip():
                 logger.warning("Final safety net triggered: empty reply.")
