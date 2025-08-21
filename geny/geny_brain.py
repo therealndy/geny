@@ -693,7 +693,7 @@ class GenyBrain:
             # Always return a fallback reply if reply is empty
             if not reply or not str(reply).strip():
                 logging.warning("Gemini returned empty reply. Using fallback.")
-                reply = "[Sorry, I don't have an answer for that right now.]"
+                reply = "BRAIN - Gemini is not responding right now. Please check the connection or try again later."
         except Exception as e:
             import logging
             logging.error(f"Exception in Gemini call: {e}")
