@@ -27,14 +27,27 @@ class ChatRequest(BaseModel):
 async def healthz():
     return {"status": "ok"}
 
+import logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s %(message)s')
+logger = logging.getLogger("geny_backend")
+
 @app.post("/chat")
 async def chat(req: ChatRequest):
-    reply = await brain.generate_reply(req.message)
-    if isinstance(reply, str) and reply.startswith("[Gemini 401]"):
-        raise HTTPException(status_code=502, detail="Upstream authentication error")
-    if isinstance(reply, str) and reply.startswith("[Gemini error]"):
-        raise HTTPException(status_code=503, detail=str(reply))
-    return {"reply": reply, "status": "ok"}
+    logger.info(f"/chat endpoint received: {req.message}")
+    try:
+        reply = await brain.generate_reply(req.message)
+        logger.info(f"Geny reply: {reply}")
+        if isinstance(reply, str) and reply.startswith("[Gemini 401]"):
+            logger.error("Gemini 401 error")
+            raise HTTPException(status_code=502, detail="Upstream authentication error")
+        if isinstance(reply, str) and reply.startswith("[Gemini error]"):
+            logger.error(f"Gemini error: {reply}")
+            raise HTTPException(status_code=503, detail=str(reply))
+        logger.info(f"Final reply sent: {reply}")
+        return {"reply": reply, "status": "ok"}
+    except Exception as e:
+        logger.error(f"Error in /chat: {e}", exc_info=True)
+        return {"reply": "Sorry, something went wrong.", "status": "error"}
 
 @app.get("/summary")
 async def summary():
