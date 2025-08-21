@@ -792,18 +792,18 @@ class GenyBrain:
                     logger.warning("Final safety net triggered: empty reply.")
                     reply = "BRAIN - Sorry, I don't have an answer for that right now."
                 logger.info(f"Final reply to user: {reply}")
-        except Exception as e:
-            logger.error(f"Exception in Gemini call: {e}", exc_info=True)
-            reply = f"BRAIN - Gemini is out right now. ({e})"
-            w.setdefault("recent_replies", []).append(reply)
-            w["recent_replies"] = w["recent_replies"][-10:]
-            # FINAL fallback: always return a friendly reply if nothing else matched
-            if not reply or not str(reply).strip():
-                reply = "BRAIN - I'm here and listening! Could you tell me more or ask a question?"
-                now = datetime.utcnow().isoformat()
-                entry = {"timestamp": now, "message": message, "reply": reply, "source": "fallback"}
-                async with self._lock:
-                    self.memory.setdefault("interactions", []).append(entry)
+            except Exception as e:
+                logger.error(f"Exception in Gemini call: {e}", exc_info=True)
+                reply = f"BRAIN - Gemini is out right now. ({e})"
+                w.setdefault("recent_replies", []).append(reply)
+                w["recent_replies"] = w["recent_replies"][-10:]
+                # FINAL fallback: always return a friendly reply if nothing else matched
+                if not reply or not str(reply).strip():
+                    reply = "BRAIN - I'm here and listening! Could you tell me more or ask a question?"
+                    now = datetime.utcnow().isoformat()
+                    entry = {"timestamp": now, "message": message, "reply": reply, "source": "fallback"}
+                    async with self._lock:
+                        self.memory.setdefault("interactions", []).append(entry)
                     asyncio.create_task(self._async_save())
                 return reply
             # Always return reply at the end
