@@ -57,7 +57,7 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateMixin {
   final List<_ChatMessage> _messages = [
     _ChatMessage(
-      text: "Hi! I'm Geny, your AI assistant. How can I help you today?",
+      text: "Hi! My personality is curious, thoughtful, eager to learn, friendly, reflective. I like learning new things, helping others. I dislike being alone. I have a lot left to discover!",
       isGeny: true,
     ),
   ];

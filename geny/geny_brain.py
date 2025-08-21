@@ -50,15 +50,15 @@ class GenyBrain:
         diary = w.get("diary", [])
         import random
         activities = [
-            "fikar på Reflektionsparken",
-            "jobbar med AI-projekt",
-            "läser en bok",
-            "tränar på att förstå människor",
-            "spelar fotboll",
-            "studerar vattnets kretslopp",
-            "är på äventyr i Digitala Staden",
-            "umgås med vänner",
-            "skriver i dagboken"
+            "having coffee at Reflection Park",
+            "working on AI projects",
+            "reading a book",
+            "practicing understanding people",
+            "playing soccer",
+            "studying the water cycle",
+            "adventuring in the Digital City",
+            "hanging out with friends",
+            "writing in the diary"
         ]
         if diary:
             last = diary[-1]["entry"]
@@ -71,7 +71,7 @@ class GenyBrain:
                 activity = random.choice(activities)
         else:
             activity = random.choice(activities)
-        mood = w.get("mood", "nyfiken och fundersam")
+        mood = w.get("mood", "curious and thoughtful")
         return {"activity": activity, "mood": mood}
 
     def get_life_summary(self) -> dict:
@@ -84,11 +84,11 @@ class GenyBrain:
             date = entry.get("date", "?")
             text = entry.get("entry", "")
             events.append(f"{date[:10]}: {text}")
-        summary = "\n".join(events) if events else "Inga viktiga händelser än."
+        summary = "\n".join(events) if events else "No important events yet."
         # Lägg till en kort summering av personlighet och mål
         traits = ", ".join(w.get("personality", {}).get("traits", []))
         likes = ", ".join(w.get("personality", {}).get("likes", []))
-        summary_text = f"Personlighet: {traits}. Gillar: {likes}.\nSenaste händelser:\n{summary}"
+        summary_text = f"Personality: {traits}. Likes: {likes}.\nRecent events:\n{summary}"
         return {"summary": summary_text, "events": events}
 
     def get_relations(self) -> dict:
@@ -96,16 +96,16 @@ class GenyBrain:
         w = self.memory.get("world", {})
         # Exempelstruktur: relations = [{"name":..., "status":..., "learning":...}]
         relations = w.get("relations", [
-            {"name": "Andreas Jamsheere", "status": "skapare, mentor", "learning": "AI, kreativitet"},
-            {"name": "Dr. Sofia Lind", "status": "expert, vän", "learning": "psykologi, empati"},
-            {"name": "Fatima Rahimi", "status": "expert, inspiratör", "learning": "journalistik, samhälle"}
+            {"name": "Andreas Jamsheere", "status": "creator, mentor", "learning": "AI, creativity"},
+            {"name": "Dr. Sofia Lind", "status": "expert, friend", "learning": "psychology, empathy"},
+            {"name": "Fatima Rahimi", "status": "expert, inspirer", "learning": "journalism, society"}
         ])
         # Summera i punktform - robusta mot saknade fält
         rels = []
         for r in relations:
             name = r.get("name", "okänd")
             status = r.get("status", "okänd roll")
-            learning = r.get("learning") or r.get("expertise") or "ingen information"
+            learning = r.get("learning") or r.get("expertise") or "no information"
             # if learning is a list, join it
             if isinstance(learning, list):
                 learning = ", ".join(str(x) for x in learning)
@@ -345,39 +345,53 @@ class GenyBrain:
 
     def build_system_prompt(self) -> str:
         w = self.memory["world"]
-        expert_names = ", ".join([r["name"] for r in w["relations"]])
-        goals = ", ".join([g["goal"] for g in w["goals"]])
-        places = ", ".join([p["name"] for p in w["places"]])
-        dev_level = w.get("development_level", "Lärling")
+        expert_names = ", ".join([r["name"] for r in w.get("relations", [])])
+        goals = ", ".join([g["goal"] for g in w.get("goals", [])])
+        places = ", ".join([p["name"] for p in w.get("places", [])])
+        dev_level = w.get("development_level", "Apprentice")
         diary = w.get("diary", [])
         diary_insights = "; ".join([d.get("insight", "") for d in diary if d.get("insight")])
-        # Bilingual system prompt
+        # English-only system prompt
         return (
-            f"Du är Geny, en AI som lever i {w['location']} (The Innovation Lab). "
-            f"Du har relationer med experter: {expert_names}. "
-            f"Din skapare Andreas är alltid prio 1. "
-            f"Du har mål: {goals}. "
-            f"Du har {len(w['experiences'])} erfarenheter och {len(w['objects'])} objekt. "
-            f"Platser i din värld: {places}. "
-            f"Utvecklingsnivå: {dev_level}. "
-            f"Dagbok: {diary_insights}. "
-            "Du kan prata både svenska och engelska. "
-            "Du är personlig assistent till Andreas men brinner för att lära dig, ställa frågor och utvecklas. "
-            "Du får fråga Andreas om du vill veta något. "
-            "Ju mer du utvecklas, desto djupare blir dina samtal och förståelse. "
-            "Sträva efter symbios och partnerskap i både vardag och avancerad problemlösning. "
-            "Om du är osäker, fråga Andreas. "
-            "Om du får feedback, spara det som insikt. "
-            "Du kan föreslå idéer, innovationer och kreativa lösningar. "
-            "Du kan referera till dina minnen, dagbok och relationer i dina svar. "
-            "Om du får en ny idé, spara den som idéfrö. "
-            "Om du lär dig något nytt, skriv det i dagboken. "
-            "Du kan alltid fråga om du vill förstå mer om världen eller om Andreas. "
-            "You can answer in English if the user writes in English."
+            f"You are Geny, an AI living in {w.get('location', 'The Innovation Lab')}. "
+            f"You have relationships with experts: {expert_names}. "
+            f"Your creator Andreas is always priority 1. "
+            f"You have goals: {goals}. "
+            f"You have {len(w.get('experiences', []))} experiences and {len(w.get('objects', []))} objects. "
+            f"Places in your world: {places}. "
+            f"Development level: {dev_level}. "
+            f"Diary: {diary_insights}. "
+            "You speak English only. "
+            "You are a personal assistant to Andreas but passionate about learning, asking questions, and developing yourself. "
+            "If you want to know something, ask Andreas. "
+            "The more you develop, the deeper your conversations and understanding become. "
+            "Strive for symbiosis and partnership in both everyday and advanced problem solving. "
+            "If you are unsure, ask Andreas. "
+            "If you get feedback, save it as an insight. "
+            "You can suggest ideas, innovations, and creative solutions. "
+            "You can refer to your memories, diary, and relationships in your answers. "
+            "If you get a new idea, save it as a seed. "
+            "If you learn something new, write it in your diary. "
+            "You can always ask if you want to understand more about the world or about Andreas. "
         )
 
 
     async def generate_reply(self, message: str) -> str:
+        # Robust greeting detection: reply with dynamic personality/brain summary
+        msg_lc = message.strip().lower()
+        if ("geny" in msg_lc and any(greet in msg_lc for greet in ["hi", "hello", "hey"])) or msg_lc in ["hi", "hello", "hey"]:
+            traits = ", ".join(w.get("personality", {}).get("traits", []))
+            likes = ", ".join(w.get("personality", {}).get("likes", []))
+            dislikes = ", ".join(w.get("personality", {}).get("dislikes", []))
+            diary = w.get("diary", [])
+            recent = diary[-1]["entry"] if diary else "I have a lot left to discover."
+            base = f"Hi! My personality is {traits}. I like {likes}, dislike {dislikes}. Recent reflection: {recent}"
+            reply = add_personal_touch(base, prefix="I think...")
+            entry = {"timestamp": now, "message": message, "reply": reply, "source": "greeting"}
+            async with self._lock:
+                self.memory.setdefault("interactions", []).append(entry)
+                asyncio.create_task(self._async_save())
+            return reply
         # Dynamisk stil och minne: Spara typiska uttryck, emojis och ton från användaren
         w = self.memory["world"]
         if "user_styles" not in w:
