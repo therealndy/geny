@@ -788,10 +788,10 @@ class GenyBrain:
                     reply = formatted
                 w.setdefault("recent_replies", []).append(gemini_raw if gemini_raw else reply)
                 w["recent_replies"] = w["recent_replies"][-10:]
-            if not reply or not str(reply).strip():
-                logger.warning("Final safety net triggered: empty reply.")
-                reply = "BRAIN - Sorry, I don't have an answer for that right now."
-            logger.info(f"Final reply to user: {reply}")
+                if not reply or not str(reply).strip():
+                    logger.warning("Final safety net triggered: empty reply.")
+                    reply = "BRAIN - Sorry, I don't have an answer for that right now."
+                logger.info(f"Final reply to user: {reply}")
         except Exception as e:
             logger.error(f"Exception in Gemini call: {e}", exc_info=True)
             reply = f"BRAIN - Gemini is out right now. ({e})"
