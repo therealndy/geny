@@ -372,7 +372,7 @@ class GenyBrain:
 
 
     def build_system_prompt(self) -> str:
-        w = self.memory["world"]
+    w = self.memory.get("world", {})
         expert_names = ", ".join([r["name"] for r in w.get("relations", [])])
         goals = ", ".join([g["goal"] for g in w.get("goals", [])])
         places = ", ".join([p["name"] for p in w.get("places", [])])
@@ -563,7 +563,7 @@ class GenyBrain:
                 asyncio.create_task(self._async_save())
             return reply
         # Save typical expressions and emojis from user (English only)
-        w = self.memory["world"]
+    w = self.memory.get("world", {})
         if "user_styles" not in w:
             w["user_styles"] = []
         import re
@@ -578,7 +578,7 @@ class GenyBrain:
         if "recent_replies" not in w:
             w["recent_replies"] = []
         now = datetime.utcnow().isoformat()
-        w = self.memory["world"]
+    w = self.memory.get("world", {})
         lower = message.strip().lower()
         # Initialize personality and diary if missing (English only)
         if "personality" not in w:
@@ -856,7 +856,7 @@ class GenyBrain:
                 asyncio.create_task(self._async_save())
             return reply
         # Save typical expressions and emojis from user (English only)
-        w = self.memory["world"]
+    w = self.memory.get("world", {})
         if "user_styles" not in w:
             w["user_styles"] = []
         import re
@@ -874,7 +874,7 @@ class GenyBrain:
         """Ask Gemini for a reply, update world, store the interaction, and persist memory."""
 
         now = datetime.utcnow().isoformat()
-        w = self.memory["world"]
+    w = self.memory.get("world", {})
         lower = message.strip().lower()
 
     # Remove duplicate add_personal_touch (use English-only version above)
