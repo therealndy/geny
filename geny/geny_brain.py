@@ -713,7 +713,10 @@ class GenyBrain:
             # Always return a fallback reply if reply is empty
             if not reply or not str(reply).strip():
                 logging.warning("Gemini returned empty reply. Using fallback.")
-                reply = "BRAIN - Gemini is out right now."
+                if any(kw in message.lower() for kw in ["search the web", "find on the web", "google", "internet", "browse"]):
+                    reply = "BRAIN - Gemini can't search the web or browse the internet."
+                else:
+                    reply = "BRAIN - Gemini is out right now."
         except Exception as e:
             import logging
             logging.error(f"Exception in Gemini call: {e}")
