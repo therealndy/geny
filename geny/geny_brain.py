@@ -776,19 +776,6 @@ class GenyBrain:
             reply = f"BRAIN - Gemini is out right now. ({e})"
             w["recent_replies"].append(reply)
             w["recent_replies"] = w["recent_replies"][-10:]
-    self.save_interaction(message, reply)
-    return reply
-            async with self._lock:
-                self.memory.setdefault("interactions", []).append(entry)
-                asyncio.create_task(self._async_save())
-            return reply
-        # Robust greeting detection: reply with dynamic personality/brain summary
-        if ("geny" in msg_lc and any(greet in msg_lc for greet in ["hi", "hello", "hey"])) or msg_lc in ["hi", "hello", "hey"]:
-            traits_list = w.get("personality", {}).get("traits", [])
-            traits = ", ".join(traits_list)
-            likes = ", ".join(w.get("personality", {}).get("likes", []))
-            dislikes = ", ".join(w.get("personality", {}).get("dislikes", []))
-            diary = w.get("diary", [])
             recent = diary[-1]["entry"] if diary else "I have a lot left to discover."
             # Remove duplicate 'Recent reflection:' and repeated adjectives
             mood = ""
