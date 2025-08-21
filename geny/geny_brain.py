@@ -377,6 +377,9 @@ class GenyBrain:
 
 
     async def generate_reply(self, message: str) -> str:
+        # Always return a valid reply
+        if not message or message.strip() == "":
+            return "BRAIN - Sorry, I didn't catch that. Could you please rephrase?"
         # Robust greeting detection: reply with dynamic personality/brain summary
         msg_lc = message.strip().lower()
         if ("geny" in msg_lc and any(greet in msg_lc for greet in ["hi", "hello", "hey"])) or msg_lc in ["hi", "hello", "hey"]:
@@ -386,7 +389,7 @@ class GenyBrain:
             diary = w.get("diary", [])
             recent = diary[-1]["entry"] if diary else "I have a lot left to discover."
             base = f"Hi! My personality is {traits}. I like {likes}, dislike {dislikes}. Recent reflection: {recent}"
-            reply = add_personal_touch(base, prefix="I think...")
+            reply = add_personal_touch(base, prefix="BRAIN -")
             entry = {"timestamp": now, "message": message, "reply": reply, "source": "greeting"}
             async with self._lock:
                 self.memory.setdefault("interactions", []).append(entry)
@@ -433,13 +436,13 @@ class GenyBrain:
                 f"My personality is {', '.join(traits)}.",
                 f"Last diary entry: '{diary[-1]['entry']}'" if diary else "I have a lot left to discover!"
             ])
-            return f"I think... {base} {extra}"
+            return f"{prefix} {base} {extra}"
 
         # Initiera personlighet och dagbok om de saknas
         if "personality" not in w:
             w["personality"] = {
                 "traits": ["curious", "thoughtful", "eager to learn", "friendly", "reflective"],
-                "likes": ["learning new things", "helping others"],
+                "likes": ["learning new things", "helping others", "music"],
                 "dislikes": ["being alone"],
                 "creator": "Andreas"
             }
@@ -493,7 +496,7 @@ class GenyBrain:
                 base = f"I have been alive for {years} years and {days%365} days."
             else:
                 base = f"I have been alive for {days} days." if days > 0 else "I was born today!"
-            reply = add_personal_touch(base, prefix="I think...")
+            reply = add_personal_touch(base, prefix="BRAIN -")
             w["diary"].append({"date": now, "entry": f"Reflected on my age: {reply}"})
             entry = {"timestamp": now, "message": message, "reply": reply, "source": "offline_fallback"}
             async with self._lock:
