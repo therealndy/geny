@@ -434,6 +434,7 @@ class GenyBrain:
             for mem in all_memories.values():
                 if isinstance(mem, dict) and "interactions" in mem:
                     all_interactions.extend(mem["interactions"])
+            logger.info(f"Loaded {len(all_interactions)} interactions from {len(all_memories)} memory files.")
             # Helper: search for relevant past messages
             def search_memories(query):
                 results = []
