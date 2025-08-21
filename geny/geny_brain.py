@@ -758,15 +758,15 @@ class GenyBrain:
         })
     if w["experiences"]:
         last = w["experiences"][-1]["timestamp"]
-            try:
-                from datetime import datetime as dt
-                last_dt = dt.fromisoformat(last)
-                now_dt = dt.fromisoformat(now)
-                if (now_dt - last_dt).total_seconds() > 43200:
-                    w["time"]["current_day"] += 1
-                    w["time"]["days_active"] += 1
-            except Exception:
-                pass
+        try:
+            from datetime import datetime as dt
+            last_dt = dt.fromisoformat(last)
+            now_dt = dt.fromisoformat(now)
+            if (now_dt - last_dt).total_seconds() > 43200:
+                w["time"]["current_day"] += 1
+                w["time"]["days_active"] += 1
+        except Exception:
+            pass
         system_prompt = self.build_system_prompt()
         try:
             logger.info(f"Calling Gemini API with prompt: {system_prompt}\n{message}")
