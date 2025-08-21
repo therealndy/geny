@@ -156,10 +156,10 @@ class GenyBrain:
         import re
         # Normalize input
         t = term.strip().lower()
-    t = re.sub(r'^(what is|define|explain)\s+', '', t)
-    t = re.sub(r"[^\wüéèáàâçñøÆØ]+", " ", t)
+        t = re.sub(r'^(what is|define|explain)\s+', '', t)
+        t = re.sub(r"[^\wüéèáàâçñøÆØ]+", " ", t)
         t = " ".join(tok for tok in t.split() if tok)
-    # Language detection removed (English only)
+        # Language detection removed (English only)
         code_keywords = ["python", "java", "shell", "sql", "go", "rust", "c", "training", "loop", "snippet", "example", "transformers"]
         t_lc = t.lower()
         # Try to extract a direct token if multi-word
