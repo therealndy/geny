@@ -756,7 +756,7 @@ class GenyBrain:
                 "date": now,
                 "insight": f"Lärde mig: {message}"
             })
-        if w["experiences"]:
+        if w.get("experiences", []):
             last = w["experiences"][-1]["timestamp"]
             try:
                 from datetime import datetime as dt
