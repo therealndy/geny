@@ -372,7 +372,7 @@ class GenyBrain:
 
 
     def build_system_prompt(self) -> str:
-    w = self.memory.get("world", {})
+        w = self.memory.get("world", {})
         expert_names = ", ".join([r["name"] for r in w.get("relations", [])])
         goals = ", ".join([g["goal"] for g in w.get("goals", [])])
         places = ", ".join([p["name"] for p in w.get("places", [])])
