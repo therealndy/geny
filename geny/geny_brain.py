@@ -427,17 +427,18 @@ class GenyBrain:
         # Always initialize 'w' before use
         w = self.memory.get("world", {})
         lower = message.strip().lower()
-        # Load all stored memories before generating reply
-        all_memories = self.load_all_memories()
-        all_interactions = []
-        for mem in all_memories.values():
-            if isinstance(mem, dict) and "interactions" in mem:
-                all_interactions.extend(mem["interactions"])
-        # Helper: search for relevant past messages
-        def search_memories(query):
-            results = []
-            for entry in all_interactions:
-                if query.lower() in entry.get("message", "").lower() or query.lower() in entry.get("reply", "").lower():
+        try:
+            # Load all stored memories before generating reply
+            all_memories = self.load_all_memories()
+            all_interactions = []
+            for mem in all_memories.values():
+                if isinstance(mem, dict) and "interactions" in mem:
+                    all_interactions.extend(mem["interactions"])
+            # Helper: search for relevant past messages
+            def search_memories(query):
+                results = []
+                for entry in all_interactions:
+                    if query.lower() in entry.get("message", "").lower() or query.lower() in entry.get("reply", "").lower():
                         results.append(entry)
                 return results
 
@@ -481,6 +482,9 @@ class GenyBrain:
                 if entry.get("message") and entry["message"].lower() in lower:
                     reply = f"BRAIN - I remember we discussed this before: '{entry['message']}' on {entry.get('timestamp','')}. Would you like to continue that conversation?"
                     return reply
+        except Exception as e:
+            logger.error(f"Error during memory recall: {e}", exc_info=True)
+            return f"BRAIN - Sorry, there was an error accessing my memories: {e}"
         # Special handling for 'Are you Gemini?' and similar questions
         msg_lc = message.strip().lower()
         if any(kw in msg_lc for kw in ["are you gemini", "are you google gemini", "are you google ai", "are you an ai", "are you an assistant"]):
