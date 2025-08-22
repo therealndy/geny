@@ -2,11 +2,44 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+// Brain wiring
+import 'package:provider/provider.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'brain/services/memory_service.dart';
+import 'brain/services/persona_service.dart';
+import 'brain/services/planner_service.dart';
+import 'brain/services/thought_loop_service.dart';
+import 'brain/services/safety_service.dart';
+import 'brain/providers/brain_provider.dart';
+
 // Change this to your Render backend URL
 const String backendBaseUrl = 'https://geny-1.onrender.com';
 
-void main() {
-  runApp(const GenyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+
+  // Create services
+  final memory = MemoryService();
+  final persona = PersonaService();
+  final planner = PlannerService();
+  final thoughtLoop = ThoughtLoopService();
+  final safety = SafetyService();
+
+  final brainProvider = BrainProvider(
+    memoryService: memory,
+    personaService: persona,
+    plannerService: planner,
+  thoughtLoopService: thoughtLoop,
+  safetyService: safety,
+  );
+
+  await brainProvider.init();
+
+  runApp(ChangeNotifierProvider.value(
+    value: brainProvider,
+    child: const GenyApp(),
+  ));
 }
 
 class GenyApp extends StatelessWidget {
