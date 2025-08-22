@@ -2,12 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [feat/auto-fixes-clean, main]
+    branches: [main, feat/auto-fixes-clean, 'fix/**']
   pull_request:
-    branches: [feat/auto-fixes-clean, main]
+    branches: [main, feat/auto-fixes-clean]
 
 jobs:
   test:
+    name: Test (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -23,32 +24,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Run tests
-        run: |
-          pytest -q
-name: CI
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
-jobs:
-  tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.12
-      - name: Install deps
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: Run tests
         # Tests are mocked to avoid requiring live API keys. If you want to run
         # live integration tests, add GENAI_API_KEY to repository secrets and
         # create a separate workflow/job that injects it.
         run: |
-          python -m pytest backend -q
+          pytest -q
