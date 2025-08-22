@@ -10,7 +10,10 @@ class ThoughtLoopService {
   ///
   /// Argument [input] is required and must be a non-empty string.
   /// Optionally takes [recentMemories] to produce memory-aware reflections.
-  Future<List<String>> reflect(String input, {List<MemoryItem>? recentMemories}) async {
+  Future<List<String>> reflect(
+    String input, {
+    List<MemoryItem>? recentMemories,
+  }) async {
     if (input.trim().isEmpty) {
       throw ArgumentError('input must be a non-empty string');
     }
@@ -25,7 +28,9 @@ class ThoughtLoopService {
       reflections.add('User asked a question — prioritize answering');
     }
     if (recentMemories != null && recentMemories.isNotEmpty) {
-      reflections.add('Referenced ${recentMemories.length} recent memory/items');
+      reflections.add(
+        'Referenced ${recentMemories.length} recent memory/items',
+      );
       // produce a tiny summary of memory types and timestamps
       final types = <String>{};
       for (var m in recentMemories) {

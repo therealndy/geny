@@ -17,10 +17,16 @@ class SafetyService {
     var out = candidate;
 
     // redact violent verbs
-    out = out.replaceAll(RegExp(r'\b(kill|destroy|murder)\b', caseSensitive: false), '[redacted]');
+    out = out.replaceAll(
+      RegExp(r'\b(kill|destroy|murder)\b', caseSensitive: false),
+      '[redacted]',
+    );
 
     // soften direct insults
-    out = out.replaceAll(RegExp(r'\byou are (stupid|dumb|idiot)\b', caseSensitive: false), 'I hear strong feelings; let\'s reframe.');
+    out = out.replaceAll(
+      RegExp(r'\byou are (stupid|dumb|idiot)\b', caseSensitive: false),
+      'I hear strong feelings; let\'s reframe.',
+    );
 
     // basic profanity list (expand as needed)
     final profanities = ['shit', 'fuck', 'damn'];
@@ -32,7 +38,10 @@ class SafetyService {
     }
 
     // simple PII-ish detection: email-like patterns -> redact
-    out = out.replaceAll(RegExp(r'\b[\w.+-]+@[\w-]+\.[\w.-]+\b'), '[redacted-email]');
+    out = out.replaceAll(
+      RegExp(r'\b[\w.+-]+@[\w-]+\.[\w.-]+\b'),
+      '[redacted-email]',
+    );
 
     return out;
   }

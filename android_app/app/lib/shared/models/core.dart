@@ -18,11 +18,11 @@ class MemoryItem {
   }) : timestamp = timestamp ?? DateTime.now();
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'type': type.name,
-        'content': content,
-        'timestamp': timestamp.toIso8601String(),
-      };
+    'id': id,
+    'type': type.name,
+    'content': content,
+    'timestamp': timestamp.toIso8601String(),
+  };
 
   factory MemoryItem.fromJson(Map<String, dynamic> json) {
     final typeStr = json['type'] as String? ?? 'episodic';

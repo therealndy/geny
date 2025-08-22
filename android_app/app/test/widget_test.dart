@@ -11,10 +11,10 @@ import 'package:app/main.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-  // Build our app and trigger a frame.
-  await tester.pumpWidget(const GenyApp());
+    // Build our app and trigger a frame.
+    await tester.pumpWidget(const GenyApp());
 
-  // Verify the app shows the title 'Geny' in the AppBar.
-  expect(find.text('Geny'), findsOneWidget);
+    // Verify the app shows the title 'Geny' in the AppBar.
+    expect(find.text('Geny'), findsOneWidget);
   });
 }
