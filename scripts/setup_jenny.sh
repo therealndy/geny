@@ -5,9 +5,19 @@
 
 set -euo pipefail
 
-PROJECT_PATH=${1:-"geny_app/app"}
+PROJECT_PATH=${1:-"android_app/app"}
 ROOT="$(pwd)"
 FULL_PATH="$ROOT/$PROJECT_PATH"
+
+SKIP_CODEGEN=0
+SKIP_RUN=0
+
+for arg in "$@"; do
+  case "$arg" in
+    --skip-codegen) SKIP_CODEGEN=1 ;;
+    --skip-run) SKIP_RUN=1 ;;
+  esac
+done
 
 echo "Running Jenny Brain setup for Flutter project: $FULL_PATH"
 
@@ -23,11 +33,37 @@ fi
 
 cd "$FULL_PATH"
 
-echo "Running flutter pub get..."
+echo "1) flutter pub get"
 flutter pub get
 
-echo "Optional: run the following commands if you want codegen and hive setup:"
-echo "  flutter pub run build_runner build --delete-conflicting-outputs"
-echo "  (and) initialize Hive boxes in app startup (see lib/brain/services/memory_service.dart)"
+if [ "$SKIP_CODEGEN" -eq 0 ]; then
+  if grep -q "build_runner" pubspec.yaml 2>/dev/null || grep -q "hive_generator" pubspec.yaml 2>/dev/null; then
+    echo "2) running build_runner codegen (delete-conflicting-outputs)"
+    flutter pub run build_runner build --delete-conflicting-outputs || echo "codegen failed (continuing)"
+  else
+    echo "2) no codegen dependencies found; skipping build_runner"
+  fi
+else
+  echo "2) skipping codegen as requested"
+fi
 
-echo "Setup helper finished. Next: implement modules under lib/brain and run flutter analyze/test."
+echo "3) flutter analyze"
+flutter analyze || (echo "analyze failed" && exit 1)
+
+echo "4) flutter test"
+flutter test --reporter=expanded || (echo "tests failed" && exit 1)
+
+if [ "$SKIP_RUN" -eq 0 ]; then
+  # Only attempt to run if a device is available
+  if flutter devices --machine | grep -q '\"id\"'; then
+    echo "5) device detected — running 'flutter run' (press Ctrl+C to stop)"
+    echo "If you prefer, re-run with --skip-run to avoid launching the app."
+    flutter run
+  else
+    echo "5) no connected device/emulator found — skip flutter run"
+  fi
+else
+  echo "5) skipping flutter run as requested"
+fi
+
+echo "Setup helper finished. Repo is analyzed and tests passed."
