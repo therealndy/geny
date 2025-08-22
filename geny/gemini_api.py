@@ -60,6 +60,31 @@ try:
 except Exception:
     pass
 
+# Extra non-secret diagnostics helpful for deployment debugging. These
+# intentionally do NOT print secrets; they report installed package names
+# and versions so platform logs (Render) can show whether the expected
+# GenAI client is present.
+try:
+    import importlib.metadata as importlib_metadata
+
+    pkg_names = []
+    try:
+        # Try to infer the installed GenAI package and its version
+        for candidate in ("google-genai", "google_genai", "google-generativeai"):
+            try:
+                ver = importlib_metadata.version(candidate)
+                pkg_names.append(f"{candidate}=={ver}")
+            except Exception:
+                # package not installed under that name
+                pass
+    except Exception:
+        pass
+
+    logger.info("Installed GenAI packages: %s", pkg_names or "(none detected)")
+except Exception:
+    # Keep startup tolerant; do not fail the process for diagnostics
+    logger.debug("Failed to gather package diagnostics at startup")
+
 
 class CircuitBreaker:
     CLOSED = "closed"

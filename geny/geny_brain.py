@@ -487,6 +487,20 @@ class GenyBrain:
             except Exception:
                 pass
 
+    def _save(self) -> None:
+        """Backward-compatible synchronous save wrapper.
+
+        Some call-sites use `self._save()` (synchronous). Ensure this delegates
+        to the canonical `save_memory()` implementation so fallback paths don't
+        raise AttributeError in deployed code.
+        """
+        try:
+            self.save_memory()
+        except Exception:
+            import logging
+
+            logging.exception("Error in _save wrapper")
+
     async def _async_save(self) -> None:
         # run sync save in a thread to avoid blocking the event loop
         loop = asyncio.get_running_loop()
@@ -1457,3 +1471,7 @@ class GenyBrain:
         total = len(interactions)
         last = interactions[-1]["timestamp"] if interactions else None
         return {"total_interactions": total, "last": last}
+
+    # NOTE: previously some code paths could fall through without an explicit
+    # return value which resulted in `None` being propagated to the HTTP
+    # layer. Add a final safety-net return to always yield a string.

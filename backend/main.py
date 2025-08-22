@@ -101,8 +101,16 @@ async def chat(req: ChatRequest):
     logger.info(f"/chat endpoint received: {req.message}")
     try:
         reply = await brain.generate_reply(req.message)
-        # Coerce None to safe fallback
-        if reply is None:
+        # Coerce non-string or empty values to a safe fallback
+        try:
+            if reply is None:
+                reply = "BRAIN - Sorry, I couldn't generate a reply right now."
+            else:
+                # Ensure it's a string and not empty after strip
+                reply = str(reply)
+                if not reply.strip():
+                    reply = "BRAIN - Sorry, I couldn't generate a reply right now."
+        except Exception:
             reply = "BRAIN - Sorry, I couldn't generate a reply right now."
         logger.info(f"Geny reply: {reply}")
         # Always persist the interaction via MemoryModule for consistency
