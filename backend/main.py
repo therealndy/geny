@@ -1,14 +1,5 @@
-
-from fastapi import FastAPI, Request, HTTPException
-from pydantic import BaseModel
-from geny.geny_brain import GenyBrain
-from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
-import os
-
-app = FastAPI()
-
 import logging
+import os
 
 # Configure logging immediately so module-level startup logs (e.g. in
 # `geny.gemini_api`) are visible during process startup and in Render logs.
@@ -20,9 +11,38 @@ from pydantic import BaseModel
 from geny.geny_brain import GenyBrain
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-import os
 
 app = FastAPI()
+
+# Allow CORS for all origins (development convenience)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+def _get_import_token_source():
+    """Return (token, source) where source is 'env', 'file', or (None, None).
+
+    For local debugging we allow a fallback file at /tmp/IMPORT_ADMIN_TOKEN.
+    """
+    token = os.environ.get("IMPORT_ADMIN_TOKEN")
+    if token:
+        return token, "env"
+    try:
+        p = "/tmp/IMPORT_ADMIN_TOKEN"
+        if os.path.exists(p):
+            with open(p, "r") as f:
+                t = f.read().strip()
+                if t:
+                    return t, "file"
+    except Exception:
+        logger.exception("Error reading token file fallback")
+    return None, None
+
 
 brain = GenyBrain()
 geny = brain
@@ -36,6 +56,11 @@ try:
 except Exception as e:
     logger.exception("Failed to import geny.gemini_api at startup: %s", e)
 
+# Log whether the IMPORT_ADMIN_TOKEN is present at process startup (do not log the value)
+_token, _source = _get_import_token_source()
+logger.info("IMPORT_ADMIN_TOKEN source at startup: %s", _source)
+
+
 class ChatRequest(BaseModel):
     message: str
 
@@ -43,18 +68,6 @@ class ChatRequest(BaseModel):
 @app.get("/healthz")
 async def healthz():
     return {"status": "ok"}
-
-import logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s %(message)s')
-logger = logging.getLogger("geny_backend")
-
-def _get_import_token_source():
-    """Return (token, source) where source is 'env', 'file', or None.
-    For local debugging we allow a fallback file at /tmp/IMPORT_ADMIN_TOKEN.
-    """
-    token = os.environ.get("IMPORT_ADMIN_TOKEN")
-_token, _source = _get_import_token_source()
-logger.info("IMPORT_ADMIN_TOKEN source at startup: %s", _source)
 
 
 @app.get("/admin/genai-status")
@@ -73,21 +86,6 @@ async def genai_status():
     except Exception as e:
         logger.exception("Failed to determine genai status: %s", e)
         return {"api_key_present": False, "genai_module_available": False}
-    try:
-        p = "/tmp/IMPORT_ADMIN_TOKEN"
-        if os.path.exists(p):
-            with open(p, "r") as f:
-                t = f.read().strip()
-                if t:
-                    return t, "file"
-    except Exception:
-        logger.exception("Error reading token file fallback")
-    return None, None
-
-
-# Log whether the IMPORT_ADMIN_TOKEN is present at process startup (do not log the value)
-_token, _source = _get_import_token_source()
-logger.info("IMPORT_ADMIN_TOKEN source at startup: %s", _source)
 
 @app.post("/chat")
 async def chat(req: ChatRequest):
