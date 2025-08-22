@@ -66,6 +66,13 @@ Example (Cloud Deploy / Cloud Run workflows already use this secret):
 
 Note: Unit tests are mocked by default and do not require a Gemini key.
 
+Shim docs
+---------
+
+There is a small compatibility shim at `google/genai.py` to preserve older
+imports that expect `google.genai`. See `google/README.md` for details and
+testing notes.
+
 ## Dev helper: start backend and run Flutter
 
 There is a small helper script that starts the backend (using the existing helper which will attempt to load `GENAI_API_KEY`) and then runs the Flutter app pointed at the local backend.

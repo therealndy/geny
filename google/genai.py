@@ -1,4 +1,6 @@
 # Compatibility shim so tests and older imports `google.genai` still work.
+# TODO: Remove this shim and migrate code to `google.generativeai` directly
+# once all imports have been updated.
 # It re-exports a minimal Client-compatible facade using google.generativeai.
 
 try:
