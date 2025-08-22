@@ -25,6 +25,16 @@ jobs:
           cd android_app/app
           flutter pub get
 
+      - name: Check formatting
+        run: |
+          cd android_app/app
+          flutter format --set-exit-if-changed .
+
+      - name: Analyze
+        run: |
+          cd android_app/app
+          flutter analyze
+
       - name: Run tests
         run: |
           cd android_app/app
