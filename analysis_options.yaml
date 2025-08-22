@@ -1,0 +1,13 @@
+analyzer:
+  exclude:
+    - geny_app/**
+    - tmp_worktree/**
+    - "**/build/**"
+    - "**/.dart_tool/**"
+
+# Keep rules minimal; rely on project defaults. Add more lints later if desired.
+linter:
+  rules:
+    # examples (disabled by default here)
+    # - prefer_const_constructors
+    # - avoid_print

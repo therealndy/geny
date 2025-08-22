@@ -1,0 +1,53 @@
+name: Deploy to Render (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to deploy'
+        required: true
+        default: 'feat/auto-fixes-clean'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deployment
+        env:
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+          RENDER_API_TOKEN: ${{ secrets.RENDER_API_TOKEN }}
+          BRANCH: ${{ github.event.inputs.branch }}
+        run: |
+          if [ -z "$RENDER_SERVICE_ID" ] || [ -z "$RENDER_API_TOKEN" ]; then
+            echo 'Missing RENDER_SERVICE_ID or RENDER_API_TOKEN secrets. Add them to repository secrets.'
+            exit 1
+          fi
+          echo "Triggering Render deploy for service $RENDER_SERVICE_ID branch $BRANCH"
+          resp=$(curl -sS -X POST \
+            -H "Authorization: Bearer $RENDER_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"serviceId\": \"$RENDER_SERVICE_ID\", \"branch\": \"$BRANCH\"}" \
+            "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys")
+          echo "$resp" | jq '.' || true
+          deploy_id=$(echo "$resp" | jq -r '.id')
+          if [ -z "$deploy_id" ] || [ "$deploy_id" = "null" ]; then
+            echo "Could not obtain deploy id from Render response"
+            exit 1
+          fi
+          echo "Polling deploy status for id $deploy_id"
+          # Poll until finished
+          for i in $(seq 1 60); do
+            status=$(curl -sS -H "Authorization: Bearer $RENDER_API_TOKEN" "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys/$deploy_id" | jq -r '.status')
+            echo "Attempt $i: status=$status"
+            if [ "$status" = "SUCCESS" ]; then
+              echo "Deploy succeeded"
+              exit 0
+            fi
+            if [ "$status" = "FAILED" ]; then
+              echo "Deploy failed"
+              exit 2
+            fi
+            sleep 5
+          done
+          echo "Timeout waiting for deploy"
+          exit 3

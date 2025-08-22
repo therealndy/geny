@@ -26,7 +26,10 @@
     </div>
   </div>
   <script>
-  const backendUrl = 'https://geny-1.onrender.com/chat';
+  // Backend endpoint. You can override by adding ?backend=https://localhost:8000 to the URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const backendBase = urlParams.get('backend') || 'https://geny-1.onrender.com';
+  const backendUrl = backendBase.replace(/\/$/, '') + '/chat';
     const messagesDiv = document.getElementById('messages');
     const input = document.getElementById('msgInput');
     const sendBtn = document.getElementById('sendBtn');

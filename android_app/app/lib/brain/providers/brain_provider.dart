@@ -17,15 +17,15 @@ class BrainProvider extends ChangeNotifier {
   BrainProvider({
     required this.memoryService,
     required this.personaService,
-  required this.plannerService,
-  required this.thoughtLoopService,
-  required this.safetyService,
+    required this.plannerService,
+    required this.thoughtLoopService,
+    required this.safetyService,
   });
 
   /// Initialize all services (e.g., open Hive boxes)
   Future<void> init() async {
     await memoryService.init();
-  // persona, planner, thoughtLoop and safety might have async init later
+    // persona, planner, thoughtLoop and safety might have async init later
   }
 
   // Example action that delegates to planner
@@ -39,9 +39,11 @@ class BrainProvider extends ChangeNotifier {
 
   Future<List<String>> reflect(String input, {int lastN = 5}) async {
     // Get last N memories (safely) to pass into the thought loop
-  final List<MemoryItem> all = memoryService.getAll();
-  final List<MemoryItem> recent = lastN <= 0 ? <MemoryItem>[] : all.reversed.take(lastN).toList().cast<MemoryItem>();
-  return await thoughtLoopService.reflect(input, recentMemories: recent);
+    final List<MemoryItem> all = memoryService.getAll();
+    final List<MemoryItem> recent = lastN <= 0
+        ? <MemoryItem>[]
+        : all.reversed.take(lastN).toList().cast<MemoryItem>();
+    return await thoughtLoopService.reflect(input, recentMemories: recent);
   }
 
   Future<String> enforceSafety(String candidate) async {

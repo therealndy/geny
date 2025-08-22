@@ -28,7 +28,8 @@ jobs:
       - name: Check formatting
         run: |
           cd android_app/app
-          flutter format --set-exit-if-changed .
+          # Use `dart format` which is available in the runner's SDK
+          dart format --set-exit-if-changed .
 
       - name: Analyze
         run: |
@@ -39,3 +40,95 @@ jobs:
         run: |
           cd android_app/app
           flutter test --reporter=expanded
+
+  android-build:
+    name: Build Android artifacts
+    runs-on: ubuntu-latest
+    needs: flutter-test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install dependencies
+        run: |
+          cd android_app/app
+          flutter pub get
+
+      - name: Build debug APK
+        run: |
+          cd android_app/app
+          flutter build apk --debug
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: geny-android-debug-apk
+          path: android_app/app/build/app/outputs/flutter-apk/app-debug.apk
+
+  smoke-test:
+    name: Smoke test backend connectivity
+    runs-on: ubuntu-latest
+    needs: flutter-test
+    env:
+      BACKEND_URL: https://geny-1.onrender.com
+    steps:
+      - name: Minimal HTTP client test
+        run: |
+          python -c "import os,sys,json,urllib.request; backend=os.environ.get('BACKEND_URL'); url=backend.rstrip('/') + '/chat'; data=json.dumps({'message':'ping from CI'}).encode('utf-8'); req=urllib.request.Request(url, data=data, headers={'Content-Type':'application/json'});
+          \ntry:
+              with urllib.request.urlopen(req, timeout=10) as r:
+                  body = r.read().decode('utf-8')
+                  print('OK', body[:200])
+          except Exception as e:
+              print('SMOKE-TEST-FAILED', e)
+              sys.exit(1)"
+
+  android-release-build:
+    name: Build Android release AAB (unsigned or signed if secrets present)
+    runs-on: ubuntu-latest
+    needs: android-build
+    env:
+      # These are read from repository secrets when present
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install dependencies
+        run: |
+          cd android_app/app
+          flutter pub get
+
+      - name: Restore keystore (if provided)
+        if: env.ANDROID_KEYSTORE_BASE64 != ''
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android_app/app/keystore.jks
+          cat > android_app/app/key.properties <<EOF
+          storeFile=keystore.jks
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          keyPassword=$ANDROID_KEY_PASSWORD
+          EOF
+
+      - name: Build app bundle
+        run: |
+          cd android_app/app
+          # Use --no-shrink to avoid missing r8 config issues in CI; remove if you handle shrinking
+          flutter build appbundle --no-shrink || flutter build appbundle
+
+      - name: Upload app bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: geny-android-aab
+          path: android_app/app/build/app/outputs/bundle/release/app-release.aab

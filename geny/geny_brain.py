@@ -33,6 +33,12 @@ class GenyBrain:
             self.memory = self.memory_module.load_memory_dict() if hasattr(self.memory_module, 'load_memory_dict') else {}
         except Exception:
             self.memory = {}
+        # Load offline libraries for lookups
+        try:
+            self._load_offline_libs()
+        except Exception:
+            # Non-fatal if offline libs are missing or malformed
+            pass
 
     def save_interaction(self, message: str, reply: str) -> None:
         """Save every message and reply using MemoryModule (SQLite+JSON)."""

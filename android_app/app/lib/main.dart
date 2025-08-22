@@ -12,8 +12,12 @@ import 'brain/services/thought_loop_service.dart';
 import 'brain/services/safety_service.dart';
 import 'brain/providers/brain_provider.dart';
 
-// Change this to your Render backend URL
-const String backendBaseUrl = 'https://geny-1.onrender.com';
+// Backend base URL. Override at build/run time with --dart-define=BACKEND_URL=https://your-host
+// Example: flutter run --dart-define=BACKEND_URL=http://10.0.2.2:8000
+const String backendBaseUrl = String.fromEnvironment(
+  'BACKEND_URL',
+  defaultValue: 'https://geny-1.onrender.com',
+);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,16 +34,15 @@ void main() async {
     memoryService: memory,
     personaService: persona,
     plannerService: planner,
-  thoughtLoopService: thoughtLoop,
-  safetyService: safety,
+    thoughtLoopService: thoughtLoop,
+    safetyService: safety,
   );
 
   await brainProvider.init();
 
-  runApp(ChangeNotifierProvider.value(
-    value: brainProvider,
-    child: const GenyApp(),
-  ));
+  runApp(
+    ChangeNotifierProvider.value(value: brainProvider, child: const GenyApp()),
+  );
 }
 
 class GenyApp extends StatelessWidget {
@@ -54,10 +57,10 @@ class GenyApp extends StatelessWidget {
         brightness: Brightness.dark,
         scaffoldBackgroundColor: Color(0xFF181A20),
         colorScheme: ColorScheme.dark(
-          primary: Color(0xFF7F5AF0),
-          secondary: Color(0xFF2CB67D),
-          background: Color(0xFF181A20),
-          surface: Color(0xFF181A20),
+          primary: const Color(0xFF7F5AF0),
+          secondary: const Color(0xFF2CB67D),
+          // 'background' is deprecated; use 'surface' consistently for our dark theme
+          surface: const Color(0xFF181A20),
         ),
         textTheme: const TextTheme(
           bodyLarge: TextStyle(color: Colors.white, fontSize: 18),
@@ -77,9 +80,6 @@ class GenyApp extends StatelessWidget {
   }
 }
 
-
-
-
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
 
@@ -87,18 +87,18 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateMixin {
+class _ChatScreenState extends State<ChatScreen>
+    with SingleTickerProviderStateMixin {
   final List<_ChatMessage> _messages = [
     _ChatMessage(
-      text: "Hi! I'm Geny. Ask me anything—I'll always try to give you a fresh, thoughtful answer. I love exploring new ideas and never repeat myself!",
+      text:
+          "Hi! I'm Geny. Ask me anything—I'll always try to give you a fresh, thoughtful answer. I love exploring new ideas and never repeat myself!",
       isGeny: true,
     ),
   ];
   final TextEditingController _controller = TextEditingController();
   bool _isWaiting = false;
   late TabController _tabController;
-
-  bool _backendOk = true;
 
   @override
   void initState() {
@@ -126,27 +126,33 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
   Future<void> _postToBackend(String text) async {
     try {
       final uri = Uri.parse('$backendBaseUrl/chat');
-      final res = await http.post(uri, headers: {'Content-Type': 'application/json'}, body: jsonEncode({'message': text}));
+      final res = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'message': text}),
+      );
       if (res.statusCode == 200) {
         final body = jsonDecode(res.body);
         final reply = body['reply'] ?? '[null]';
         setState(() {
           _messages.add(_ChatMessage(text: reply, isGeny: true));
           _isWaiting = false;
-          _backendOk = true;
         });
       } else {
         setState(() {
-          _messages.add(_ChatMessage(text: '[backend error ${res.statusCode}]', isGeny: true));
+          _messages.add(
+            _ChatMessage(
+              text: '[backend error ${res.statusCode}]',
+              isGeny: true,
+            ),
+          );
           _isWaiting = false;
-          _backendOk = false;
         });
       }
     } catch (e) {
       setState(() {
         _messages.add(_ChatMessage(text: '[network error] $e', isGeny: true));
         _isWaiting = false;
-        _backendOk = false;
       });
     }
   }
@@ -161,7 +167,9 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
             itemBuilder: (context, index) {
               final msg = _messages[index];
               return Align(
-                alignment: msg.isGeny ? Alignment.centerLeft : Alignment.centerRight,
+                alignment: msg.isGeny
+                    ? Alignment.centerLeft
+                    : Alignment.centerRight,
                 child: Container(
                   margin: EdgeInsets.only(
                     top: 6,
@@ -169,15 +177,20 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
                     left: msg.isGeny ? 0 : 48,
                     right: msg.isGeny ? 48 : 0,
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 18),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 18,
+                  ),
                   decoration: BoxDecoration(
                     color: msg.isGeny
                         ? Theme.of(context).colorScheme.surface
-                        : Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                        : Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(22),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: 8,
                         offset: Offset(0, 2),
                       ),
@@ -202,7 +215,10 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
               mainAxisAlignment: MainAxisAlignment.start,
               children: const [
                 SizedBox(width: 16),
-                Text('Geny is typing...', style: TextStyle(color: Colors.white70)),
+                Text(
+                  'Geny is typing...',
+                  style: TextStyle(color: Colors.white70),
+                ),
               ],
             ),
           ),
@@ -219,7 +235,9 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
                     hintText: 'Type a message...',
                     hintStyle: TextStyle(color: Colors.white54),
                     contentPadding: EdgeInsets.symmetric(
-                        vertical: 14, horizontal: 20),
+                      vertical: 14,
+                      horizontal: 20,
+                    ),
                   ),
                   onSubmitted: (_) => _sendMessage(),
                 ),
@@ -297,9 +315,9 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
   }
 }
 
-
 // Livshistoria-tab
 class LifeTab extends StatefulWidget {
+  const LifeTab({super.key});
   @override
   State<LifeTab> createState() => _LifeTabState();
 }
@@ -317,22 +335,35 @@ class _LifeTabState extends State<LifeTab> {
   }
 
   Future<void> _fetch() async {
-    setState(() { loading = true; error = null; });
+    if (!mounted) return;
+    setState(() {
+      loading = true;
+      error = null;
+    });
     try {
       final uri = Uri.parse('$backendBaseUrl/life');
       final res = await http.get(uri);
       if (res.statusCode == 200) {
         final body = jsonDecode(res.body);
+        if (!mounted) return;
         setState(() {
           summary = body['summary'] ?? '';
           events = (body['events'] as List<dynamic>?)?.cast<String>() ?? [];
           loading = false;
         });
       } else {
-        setState(() { error = 'Backend error (${res.statusCode})'; loading = false; });
+        if (!mounted) return;
+        setState(() {
+          error = 'Backend error (${res.statusCode})';
+          loading = false;
+        });
       }
     } catch (e) {
-      setState(() { error = 'Network error: $e'; loading = false; });
+      if (!mounted) return;
+      setState(() {
+        error = 'Network error: $e';
+        loading = false;
+      });
     }
   }
 
@@ -344,7 +375,14 @@ class _LifeTabState extends State<LifeTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text('Life Story', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white)),
+            Text(
+              'Life Story',
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
             const SizedBox(height: 12),
             if (loading)
               const CircularProgressIndicator()
@@ -352,21 +390,29 @@ class _LifeTabState extends State<LifeTab> {
               Text(error!, style: TextStyle(color: Colors.red, fontSize: 16))
             else ...[
               if (summary != null)
-                Text(summary!, style: TextStyle(fontSize: 16, color: Colors.white70)),
+                Text(
+                  summary!,
+                  style: TextStyle(fontSize: 16, color: Colors.white70),
+                ),
               const SizedBox(height: 16),
               if (events != null && events!.isNotEmpty) ...[
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: Text('Recent events:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  child: Text(
+                    'Recent events:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
                 ),
                 const SizedBox(height: 8),
-                ...events!.map((e) => ListTile(
-                  leading: Icon(Icons.bolt, color: Colors.purpleAccent),
-                  title: Text(e, style: TextStyle(color: Colors.white)),
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                )),
-              ]
+                ...events!.map(
+                  (e) => ListTile(
+                    leading: Icon(Icons.bolt, color: Colors.purpleAccent),
+                    title: Text(e, style: TextStyle(color: Colors.white)),
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              ],
             ],
             const SizedBox(height: 16),
             ElevatedButton(
@@ -382,6 +428,7 @@ class _LifeTabState extends State<LifeTab> {
 
 // Ålder-tab
 class AgeTab extends StatefulWidget {
+  const AgeTab({super.key});
   @override
   State<AgeTab> createState() => _AgeTabState();
 }
@@ -398,20 +445,33 @@ class _AgeTabState extends State<AgeTab> {
   }
 
   Future<void> _fetch() async {
-    setState(() { loading = true; error = null; });
+    if (!mounted) return;
+    setState(() {
+      loading = true;
+      error = null;
+    });
     try {
       final uri = Uri.parse('$backendBaseUrl/age');
       final res = await http.get(uri);
       if (res.statusCode == 200) {
+        if (!mounted) return;
         setState(() {
           age = jsonDecode(res.body);
           loading = false;
         });
       } else {
-        setState(() { error = 'Backend error (${res.statusCode})'; loading = false; });
+        if (!mounted) return;
+        setState(() {
+          error = 'Backend error (${res.statusCode})';
+          loading = false;
+        });
       }
     } catch (e) {
-      setState(() { error = 'Network error: $e'; loading = false; });
+      if (!mounted) return;
+      setState(() {
+        error = 'Network error: $e';
+        loading = false;
+      });
     }
   }
 
@@ -423,20 +483,39 @@ class _AgeTabState extends State<AgeTab> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Age', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white)),
+            Text(
+              'Age',
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
             const SizedBox(height: 16),
             if (loading)
               const CircularProgressIndicator()
             else if (error != null)
               Text(error!, style: TextStyle(color: Colors.red, fontSize: 16))
             else if (age != null) ...[
-              Text('Geny was created:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              Text(
+                'Geny was created:',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
               const SizedBox(height: 8),
-              Text(age!["created"]?.toString() ?? '', style: TextStyle(fontSize: 18, color: Colors.white70)),
+              Text(
+                age!["created"]?.toString() ?? '',
+                style: TextStyle(fontSize: 18, color: Colors.white70),
+              ),
               const SizedBox(height: 12),
-              Text('Geny is:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              Text(
+                'Geny is:',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
               const SizedBox(height: 8),
-              Text(age!["age"]?.toString() ?? '', style: TextStyle(fontSize: 18, color: Colors.white70)),
+              Text(
+                age!["age"]?.toString() ?? '',
+                style: TextStyle(fontSize: 18, color: Colors.white70),
+              ),
             ],
             const SizedBox(height: 16),
             ElevatedButton(
@@ -452,6 +531,7 @@ class _AgeTabState extends State<AgeTab> {
 
 // Status-tab
 class StatusTab extends StatefulWidget {
+  const StatusTab({super.key});
   @override
   State<StatusTab> createState() => _StatusTabState();
 }
@@ -468,20 +548,33 @@ class _StatusTabState extends State<StatusTab> {
   }
 
   Future<void> _fetch() async {
-    setState(() { loading = true; error = null; });
+    if (!mounted) return;
+    setState(() {
+      loading = true;
+      error = null;
+    });
     try {
       final uri = Uri.parse('$backendBaseUrl/status');
       final res = await http.get(uri);
       if (res.statusCode == 200) {
+        if (!mounted) return;
         setState(() {
           status = jsonDecode(res.body);
           loading = false;
         });
       } else {
-        setState(() { error = 'Backend error (${res.statusCode})'; loading = false; });
+        if (!mounted) return;
+        setState(() {
+          error = 'Backend error (${res.statusCode})';
+          loading = false;
+        });
       }
     } catch (e) {
-      setState(() { error = 'Network error: $e'; loading = false; });
+      if (!mounted) return;
+      setState(() {
+        error = 'Network error: $e';
+        loading = false;
+      });
     }
   }
 
@@ -493,20 +586,39 @@ class _StatusTabState extends State<StatusTab> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Status', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white)),
+            Text(
+              'Status',
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
             const SizedBox(height: 16),
             if (loading)
               const CircularProgressIndicator()
             else if (error != null)
               Text(error!, style: TextStyle(color: Colors.red, fontSize: 16))
             else if (status != null) ...[
-              Text('Activity:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              Text(
+                'Activity:',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
               const SizedBox(height: 8),
-              Text(status!["activity"] ?? '', style: TextStyle(fontSize: 18, color: Colors.white70)),
+              Text(
+                status!["activity"] ?? '',
+                style: TextStyle(fontSize: 18, color: Colors.white70),
+              ),
               const SizedBox(height: 12),
-              Text('Mood:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              Text(
+                'Mood:',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
               const SizedBox(height: 8),
-              Text(status!["mood"] ?? '', style: TextStyle(fontSize: 18, color: Colors.white70)),
+              Text(
+                status!["mood"] ?? '',
+                style: TextStyle(fontSize: 18, color: Colors.white70),
+              ),
             ],
             const SizedBox(height: 16),
             ElevatedButton(
@@ -522,6 +634,7 @@ class _StatusTabState extends State<StatusTab> {
 
 // Relationer-tab
 class RelationsTab extends StatefulWidget {
+  const RelationsTab({super.key});
   @override
   State<RelationsTab> createState() => _RelationsTabState();
 }
@@ -538,21 +651,34 @@ class _RelationsTabState extends State<RelationsTab> {
   }
 
   Future<void> _fetch() async {
-    setState(() { loading = true; error = null; });
+    if (!mounted) return;
+    setState(() {
+      loading = true;
+      error = null;
+    });
     try {
       final uri = Uri.parse('$backendBaseUrl/relations');
       final res = await http.get(uri);
       if (res.statusCode == 200) {
         final body = jsonDecode(res.body);
+        if (!mounted) return;
         setState(() {
           relations = body['relations'] as List<dynamic>?;
           loading = false;
         });
       } else {
-        setState(() { error = 'Backend error (${res.statusCode})'; loading = false; });
+        if (!mounted) return;
+        setState(() {
+          error = 'Backend error (${res.statusCode})';
+          loading = false;
+        });
       }
     } catch (e) {
-      setState(() { error = 'Network error: $e'; loading = false; });
+      if (!mounted) return;
+      setState(() {
+        error = 'Network error: $e';
+        loading = false;
+      });
     }
   }
 
@@ -564,7 +690,14 @@ class _RelationsTabState extends State<RelationsTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text('Relations', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white)),
+            Text(
+              'Relations',
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
             const SizedBox(height: 16),
             if (loading)
               const CircularProgressIndicator()
@@ -573,18 +706,25 @@ class _RelationsTabState extends State<RelationsTab> {
             else if (relations != null && relations!.isNotEmpty) ...[
               Align(
                 alignment: Alignment.centerLeft,
-                child: Text('Important relations:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                child: Text(
+                  'Important relations:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                ),
               ),
               const SizedBox(height: 8),
-              ...relations!.map((r) => ListTile(
-                leading: Icon(Icons.person, color: Colors.cyanAccent),
-                title: Text(r, style: TextStyle(color: Colors.white)),
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-              )),
-            ]
-            else
-              Text('No relations registered.', style: TextStyle(color: Colors.white70)),
+              ...relations!.map(
+                (r) => ListTile(
+                  leading: Icon(Icons.person, color: Colors.cyanAccent),
+                  title: Text(r, style: TextStyle(color: Colors.white)),
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ] else
+              Text(
+                'No relations registered.',
+                style: TextStyle(color: Colors.white70),
+              ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: loading ? null : _fetch,
@@ -596,7 +736,6 @@ class _RelationsTabState extends State<RelationsTab> {
     );
   }
 }
-
 
 class _ChatMessage {
   final String text;

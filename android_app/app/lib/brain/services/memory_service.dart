@@ -23,6 +23,8 @@ class MemoryService {
 
   List<MemoryItem> getAll() {
     if (_box == null) return [];
-    return _box!.values.map((e) => MemoryItem.fromJson(Map<String, dynamic>.from(e))).toList();
+    return _box!.values
+        .map((e) => MemoryItem.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
   }
 }

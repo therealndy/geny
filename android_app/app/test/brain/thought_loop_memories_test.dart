@@ -9,8 +9,18 @@ void main() {
     test('reflect summarizes recent memories', () async {
       final now = DateTime.now();
       final mems = [
-        MemoryItem(id: '1', type: MemoryType.episodic, content: 'first', timestamp: now.subtract(Duration(minutes: 5))),
-        MemoryItem(id: '2', type: MemoryType.semantic, content: 'second', timestamp: now.subtract(Duration(minutes: 1))),
+        MemoryItem(
+          id: '1',
+          type: MemoryType.episodic,
+          content: 'first',
+          timestamp: now.subtract(Duration(minutes: 5)),
+        ),
+        MemoryItem(
+          id: '2',
+          type: MemoryType.semantic,
+          content: 'second',
+          timestamp: now.subtract(Duration(minutes: 1)),
+        ),
       ];
 
       final out = await svc.reflect('Check memories', recentMemories: mems);
