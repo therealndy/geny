@@ -1,8 +1,6 @@
 (Minimal README)
 
 Prereqs
-- gcloud authenticated and project set to `geny-469516`.
-- Python 3.12 and .venv created (project contains requirements.txt).
 
 Start backend (one command)
 1. Upload your GENAI key to Secret Manager as `genai-api-key` (see scripts above).
@@ -34,5 +32,12 @@ export GENAI_API_KEY="$(gcloud secrets versions access latest --secret='genai-ap
 # e.g. run a specific integration test file
 .venv/bin/python -m pytest tests/integration/test_live_gemini.py -q
 ```
+
+## CI
+
+This project includes a GitHub Actions workflow that runs Flutter tests for the Android app.
+
+[![Flutter Tests](https://github.com/therealndy/geny/actions/workflows/flutter_tests.yml/badge.svg)](https://github.com/therealndy/geny/actions/workflows/flutter_tests.yml)
+
 
 
