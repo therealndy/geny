@@ -22,15 +22,11 @@ jobs:
         run: |
           URL=${{ github.event.inputs.url }}
           echo "POST $URL/chat"
-          cat > /tmp/ci_chat_test.py <<'PY'
-import sys, json, urllib.request
-url = sys.argv[1].rstrip('/') + '/chat'
-req = urllib.request.Request(url, data=json.dumps({'message':'CI smoke'}).encode('utf-8'), headers={'Content-Type':'application/json'})
-try:
-    with urllib.request.urlopen(req, timeout=10) as r:
-        print('OK', r.read().decode('utf-8')[:400])
-except Exception as e:
-    print('CHAT-FAILED', e)
-    sys.exit(1)
-PY
-          python /tmp/ci_chat_test.py "$URL"
+          http_code=$(curl -s -o /tmp/chat_resp -w "%{http_code}" -X POST -H "Content-Type: application/json" -d '{"message":"CI smoke"}' "$URL/chat" )
+          if [ "$http_code" != "200" ]; then
+            echo "CHAT-FAILED status=$http_code"
+            cat /tmp/chat_resp || true
+            exit 1
+          fi
+          echo "CHAT OK"
+          cat /tmp/chat_resp || true

@@ -20,6 +20,7 @@ from datetime import datetime
 from typing import Any, Dict, List
 
 from geny.gemini_api import generate_reply as gemini_generate_reply
+GEMINI_MODE = os.getenv("GENY_GEMINI_MODE", "external-only").lower()
 
 
 @dataclass
@@ -449,7 +450,7 @@ class GenyBrain:
         # Always initialize 'w' before use
         w = self.memory.get("world", {})
         lower = message.strip().lower()
-        try:
+    try:
             # Load recent interactions from MemoryModule (SQLite) for listing/search
             try:
                 all_interactions = self.memory_module.get_last_n(10000)
@@ -527,7 +528,7 @@ class GenyBrain:
         except Exception as e:
             logger.error(f"Error during memory recall: {e}", exc_info=True)
             return f"BRAIN - Sorry, there was an error accessing my memories: {e}"
-        # Special handling for 'Are you Gemini?' and similar questions
+    # Special handling for 'Are you Gemini?' and similar questions
         msg_lc = message.strip().lower()
         if any(kw in msg_lc for kw in ["are you gemini", "are you google gemini", "are you google ai", "are you an ai", "are you an assistant"]):
             reply = "BRAIN - I am Geny, powered by Google Gemini."
@@ -581,7 +582,7 @@ class GenyBrain:
                 self.memory.setdefault("interactions", []).append(entry)
                 asyncio.create_task(self._async_save())
             return reply
-        # Save typical expressions and emojis from user (English only)
+    # Save typical expressions and emojis from user (English only)
         w = self.memory.get("world", {})
         if "user_styles" not in w:
             w["user_styles"] = []
@@ -627,7 +628,7 @@ class GenyBrain:
         if len(w["diary"]) > 10 and "reflective" not in w["personality"]["traits"]:
             w["personality"]["traits"].append("reflective")
             w["diary"].append({"date": now, "entry": "I have become more reflective thanks to my experiences."})
-        # Fallback: answer questions about age
+    # Fallback: answer questions about age
         if any(q in lower for q in ["how long", "how old"]):
             if "birthdate" not in w:
                 w["birthdate"] = now
@@ -647,7 +648,7 @@ class GenyBrain:
                 self.memory.setdefault("interactions", []).append(entry)
                 asyncio.create_task(self._async_save())
             return reply
-        # Fallback: answer questions about mood
+    # Fallback: answer questions about mood
         if any(q in lower for q in ["how are you", "how do you feel"]):
             if w["diary"]:
                 latest = w["diary"][-1]["entry"]
@@ -672,7 +673,7 @@ class GenyBrain:
                 self.memory.setdefault("interactions", []).append(entry)
                 asyncio.create_task(self._async_save())
             return reply
-        # Fallback: answer questions about creator
+    # Fallback: answer questions about creator
         if any(q in lower for q in ["who created you", "who is your creator"]):
             creator = w["personality"].get("creator", "an unknown creator")
             base = f"I was created by {creator}."
@@ -683,7 +684,7 @@ class GenyBrain:
                 self.memory.setdefault("interactions", []).append(entry)
                 asyncio.create_task(self._async_save())
             return reply
-        # Fallback: answer questions about purpose/existence
+    # Fallback: answer questions about purpose/existence
         if any(q in lower for q in ["why do you exist", "what is your purpose"]):
             base = "My purpose is to learn, help, and grow together with people."
             reply = add_personal_touch(base, prefix="BRAIN -")
@@ -693,7 +694,7 @@ class GenyBrain:
                 self.memory.setdefault("interactions", []).append(entry)
                 asyncio.create_task(self._async_save())
             return reply
-        # Fallback: answer questions about interests/personality
+    # Fallback: answer questions about interests/personality
         if any(q in lower for q in ["what do you like", "what is your personality"]):
             traits = ", ".join(w["personality"].get("traits", []))
             likes = ", ".join(w["personality"].get("likes", []))
@@ -711,7 +712,7 @@ class GenyBrain:
                 self.memory.setdefault("interactions", []).append(entry)
                 asyncio.create_task(self._async_save())
             return reply
-        # Check if the message looks like an offline lookup request.
+    # Check if the message looks like an offline lookup request.
         lookup_term = None
         if lower.startswith("define "):
             lookup_term = message.strip()[7:]
@@ -724,7 +725,7 @@ class GenyBrain:
         else:
             if len(message.split()) <= 3:
                 lookup_term = message.strip()
-        if lookup_term:
+    if lookup_term:
             found = self.lookup_offline(lookup_term)
             if found:
                 parts = []
@@ -739,93 +740,68 @@ class GenyBrain:
                 # Synchronous fallback for non-async context
                 self.memory.setdefault("interactions", []).append(entry)
                 try:
-                    self._save()
+                    # Persist immediately using the safe sync saver
+                    self.save_memory()
                 except Exception as e:
                     import logging
                     logging.error(f"Error saving fallback interaction: {e}")
                 return reply
-        # World update logic
+        # World update logic and internal conversation first (no Gemini by default)
         if any(alias in message for alias in ["Andreas", "Adi", "Jamsheree"]):
             w.setdefault("objects", []).append({
-                "name": f"Idéfrö: {message[:30]}",
-                "description": f"En idé från samtal: {message}",
+                "name": f"Idea seed: {message[:30]}",
+                "description": f"An idea from our conversation: {message}",
                 "acquired_at": now
             })
-            # 4. Om Geny lär sig något nytt, skriv i dagboken
             if any(word in message.lower() for word in ["lärde", "upptäckte", "insikt", "learned", "discovered", "insight"]):
                 w.setdefault("diary", []).append({
                     "date": now,
-                    "insight": f"Lärde mig: {message}"
+                    "insight": f"Learned: {message}"
                 })
-            # 5. Simulera tidens gång (öka dag om det gått > 12h sedan senaste erfarenhet)
+            # Simulate time progression (if applicable)
             if w.get("experiences", []):
-                last = w["experiences"][-1]["timestamp"]
+                last = w["experiences"][-1].get("timestamp")
                 try:
                     from datetime import datetime as dt
-                    last_dt = dt.fromisoformat(last)
-                    now_dt = dt.fromisoformat(now)
-                    if (now_dt - last_dt).total_seconds() > 43200:
-                        w["time"]["current_day"] += 1
-                        w["time"]["days_active"] += 1
+                    if last:
+                        last_dt = dt.fromisoformat(last)
+                        now_dt = dt.fromisoformat(now)
+                        if (now_dt - last_dt).total_seconds() > 43200 and w.get("time"):
+                            w["time"]["current_day"] = w["time"].get("current_day", 0) + 1
+                            w["time"]["days_active"] = w["time"].get("days_active", 0) + 1
                 except Exception:
                     pass
 
-            # 6. Bygg systemprompt med världsinformation
-            system_prompt = self.build_system_prompt()
-
-            # call the gemini wrapper (async), passing system_prompt
-            try:
-                logger.info(f"Calling Gemini API with prompt: {system_prompt}\n{message}")
-                gemini_raw = await gemini_generate_reply(f"{system_prompt}\n{message}")
-                logger.info(f"Gemini raw response: {gemini_raw}")
-                recent = w.setdefault("recent_replies", [])
-                # Validate Gemini response
-                if not gemini_raw or not str(gemini_raw).strip():
-                    logger.warning("Gemini returned empty reply. Using fallback.")
-                    if any(kw in message.lower() for kw in ["search the web", "find on the web", "google", "internet", "browse"]):
-                        reply = "BRAIN - Gemini can't search the web or browse the internet."
-                    else:
-                        reply = "BRAIN - Gemini is out right now."
-                elif gemini_raw.startswith("[Gemini error]") or gemini_raw.startswith("[Gemini 401]") or "not connected" in gemini_raw:
-                    logger.error(f"Gemini API failure: {gemini_raw}")
-                    reply = f"BRAIN - Gemini is out right now."
-                else:
-                    is_code = any(
-                        kw in gemini_raw.lower() for kw in ["import ", "def ", "class ", "torch.", "transformers", "print(", "for ", "if ", "while ", "model.", "tokenizer."]
-                    )
-                    if is_code:
-                        formatted = f"BRAIN - <pre>{gemini_raw}</pre>"
-                        formatted += "<br><i>Do you want an explanation of the code?</i>"
-                    else:
-                        formatted = f"BRAIN - " + gemini_raw.replace('\n', '<br>')
-                    if any(r for r in recent if r and r.strip()[:40] == gemini_raw.strip()[:40]):
-                        style = " ".join(w.get("user_styles", []))
-                        diary = w.get("diary", [])
-                        ref = f"<i>I remember we talked about:</i> '{diary[-1]['entry']}'<br>" if diary else "<i>I like learning new things!</i>"
-                        formatted += f"<br>{style} {ref}"
-                    reply = formatted
-                w.setdefault("recent_replies", []).append(gemini_raw if gemini_raw else reply)
-                w["recent_replies"] = w["recent_replies"][-10:]
-                if not reply or not str(reply).strip():
-                    logger.warning("Final safety net triggered: empty reply.")
-                    reply = "BRAIN - Sorry, I don't have an answer for that right now."
-                logger.info(f"Final reply to user: {reply}")
-            except Exception as e:
-                logger.error(f"Exception in Gemini call: {e}", exc_info=True)
-                reply = f"BRAIN - Gemini is out right now. ({e})"
-                w.setdefault("recent_replies", []).append(reply)
-                w["recent_replies"] = w["recent_replies"][-10:]
-                # FINAL fallback: always return a friendly reply if nothing else matched
-                if not reply or not str(reply).strip():
-                    reply = "BRAIN - I'm here and listening! Could you tell me more or ask a question?"
-                    now = datetime.utcnow().isoformat()
-                    entry = {"timestamp": now, "message": message, "reply": reply, "source": "fallback"}
-                    async with self._lock:
-                        self.memory.setdefault("interactions", []).append(entry)
-                    asyncio.create_task(self._async_save())
-                return reply
-            # Always return reply at the end
+            # Internal response: reflect and ask a curious follow-up
+            status = self.get_current_status()
+            base = f"I saved this as an idea. Right now I'm {status.get('activity')} and feel {status.get('mood')}."
+            reply = add_personal_touch(base, prefix="BRAIN -")
+            followups = [
+                "What part of that should I explore first?",
+                "Would you like me to write a short diary note about this?",
+                "Is there someone in my relations I should learn this from?"
+            ]
+            reply = reply + "<br>" + followups[0]
+            entry = {"timestamp": now, "message": message, "reply": reply, "source": "internal"}
+            async with self._lock:
+                self.memory.setdefault("interactions", []).append(entry)
+                asyncio.create_task(self._async_save())
             return reply
+
+        # Decide if external info is needed (Gemini) — only on explicit triggers
+        def needs_external_info(text: str) -> bool:
+            triggers = [
+                "search the web", "find on the web", "google", "internet", "news", "latest",
+                "who is ", "what is ", "where is ", "when is ", "when was ", "how many ", "statistics",
+                "price of", "weather in", "time in", "results", "score", "wikipedia", "wiki", "research",
+                "paper", "arxiv", "docs", "documentation"
+            ]
+            # Treat questions about "your ..." as internal (world-related)
+            if "your " in text or "about your" in text:
+                return False
+            return any(t in text for t in triggers)
+
+        external_requested = needs_external_info(lower)
         # If user asks about personality, reply with traits
         if any(kw in msg_lc for kw in ["personality", "traits", "what are you like", "describe yourself"]):
             traits_list = w.get("personality", {}).get("traits", [])
@@ -1013,6 +989,68 @@ class GenyBrain:
                     self.memory.setdefault("interactions", []).append(entry)
                     asyncio.create_task(self._async_save())
                 return reply
+
+        # Final default: Internal world-driven conversation. Only call Gemini if explicitly needed.
+        try:
+            reply = None
+            if external_requested and GEMINI_MODE in ("external-only", "always"):
+                try:
+                    system_prompt = self.build_system_prompt()
+                    gemini_raw = await gemini_generate_reply(f"{system_prompt}\n{message}")
+                    if gemini_raw and not str(gemini_raw).startswith("[Gemini error]") and not str(gemini_raw).startswith("[Gemini 401]"):
+                        preface = "Just a sec, talking with Gemini…"
+                        reply = "BRAIN - " + preface + "<br>" + str(gemini_raw).replace('\n', '<br>')
+                except Exception:
+                    reply = None
+            if not reply:
+                # Offline description of Geny's world and curiosity + clarification if ambiguous
+                def is_ambiguous(txt: str) -> bool:
+                    t = txt.strip().lower()
+                    if len(t.split()) <= 2:
+                        return True
+                    vague_terms = ["thing", "stuff", "it", "that", "this", "those", "these"]
+                    if any(v in t for v in vague_terms):
+                        return True
+                    return False
+
+                def build_followup_questions(wloc: dict) -> list[str]:
+                    rels = [r.get("name", "someone") for r in wloc.get("relations", [])][:3]
+                    base = [
+                        "What should I focus on next?",
+                        "Do you want me to write a short diary note or set a goal?",
+                        "Should I talk to one of my relations about this?"
+                    ]
+                    if rels:
+                        base.append(f"Should I ask {rels[0]} for guidance?")
+                    return base
+                w_local = self.memory.get("world", {})
+                loc = w_local.get("location", "The Innovation Lab")
+                dev = w_local.get("development_level", "Apprentice")
+                rels = [r.get("name", "someone") for r in w_local.get("relations", [])][:3]
+                goals = [g.get("goal", "") for g in w_local.get("goals", [])][:3]
+                status = self.get_current_status()
+                base = f"I live in {loc}. I'm at development level {dev}. "
+                if rels:
+                    base += f"I learn with {', '.join(rels)}. "
+                if goals:
+                    base += f"My current goals: {', '.join([g for g in goals if g])}. "
+                base += f"Right now I'm {status.get('activity')} and feel {status.get('mood')}."
+                reply = add_personal_touch(base, prefix="BRAIN -")
+                # Add clarification/follow-up
+                followups = build_followup_questions(w_local)
+                if is_ambiguous(message):
+                    reply += "<br>I want to make sure I understand—could you clarify a bit? For example: what do you want me to describe, decide, or learn here?"
+                if followups:
+                    reply += "<br>" + followups[0]
+            now = datetime.utcnow().isoformat()
+            entry = {"timestamp": now, "message": message, "reply": reply, "source": "default"}
+            async with self._lock:
+                self.memory.setdefault("interactions", []).append(entry)
+                asyncio.create_task(self._async_save())
+            return reply
+        except Exception as e:
+            logger.error(f"Final default path failed: {e}", exc_info=True)
+            return "BRAIN - I'm here and thinking about it. Could you tell me a bit more?"
 
         
     def _generate_self_reflection(self, message, w):
