@@ -8,17 +8,33 @@ import os
 
 app = FastAPI()
 
-# Tillåt CORS för alla origins (för utveckling)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+import logging
+
+# Configure logging immediately so module-level startup logs (e.g. in
+# `geny.gemini_api`) are visible during process startup and in Render logs.
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s %(message)s')
+logger = logging.getLogger("geny_backend")
+
+from fastapi import FastAPI, Request, HTTPException
+from pydantic import BaseModel
+from geny.geny_brain import GenyBrain
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+import os
+
+app = FastAPI()
 
 brain = GenyBrain()
 geny = brain
+
+# Emit a non-secret startup diagnostic about GenAI availability so platform logs
+# clearly show whether the API key and client library are present in-process.
+try:
+    from geny import gemini_api as _g
+    logger.info("Startup GenAI status: api_key_present=%s, genai_module_available=%s",
+                bool(getattr(_g, "API_KEY", None)), getattr(_g, "genai", None) is not None)
+except Exception as e:
+    logger.exception("Failed to import geny.gemini_api at startup: %s", e)
 
 class ChatRequest(BaseModel):
     message: str
@@ -37,8 +53,26 @@ def _get_import_token_source():
     For local debugging we allow a fallback file at /tmp/IMPORT_ADMIN_TOKEN.
     """
     token = os.environ.get("IMPORT_ADMIN_TOKEN")
-    if token:
-        return token, "env"
+_token, _source = _get_import_token_source()
+logger.info("IMPORT_ADMIN_TOKEN source at startup: %s", _source)
+
+
+@app.get("/admin/genai-status")
+async def genai_status():
+    """Admin endpoint (non-secret) returning whether a GenAI API key and the
+    google.generativeai client are available in the running process.
+
+    This intentionally does NOT return or log any secret values.
+    """
+    try:
+        from geny import gemini_api as _g
+        return {
+            "api_key_present": bool(getattr(_g, "API_KEY", None)),
+            "genai_module_available": getattr(_g, "genai", None) is not None,
+        }
+    except Exception as e:
+        logger.exception("Failed to determine genai status: %s", e)
+        return {"api_key_present": False, "genai_module_available": False}
     try:
         p = "/tmp/IMPORT_ADMIN_TOKEN"
         if os.path.exists(p):
