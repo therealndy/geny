@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from geny.geny_brain import GenyBrain
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+import os
 
 app = FastAPI()
 
@@ -30,6 +31,29 @@ async def healthz():
 import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s %(message)s')
 logger = logging.getLogger("geny_backend")
+
+def _get_import_token_source():
+    """Return (token, source) where source is 'env', 'file', or None.
+    For local debugging we allow a fallback file at /tmp/IMPORT_ADMIN_TOKEN.
+    """
+    token = os.environ.get("IMPORT_ADMIN_TOKEN")
+    if token:
+        return token, "env"
+    try:
+        p = "/tmp/IMPORT_ADMIN_TOKEN"
+        if os.path.exists(p):
+            with open(p, "r") as f:
+                t = f.read().strip()
+                if t:
+                    return t, "file"
+    except Exception:
+        logger.exception("Error reading token file fallback")
+    return None, None
+
+
+# Log whether the IMPORT_ADMIN_TOKEN is present at process startup (do not log the value)
+_token, _source = _get_import_token_source()
+logger.info("IMPORT_ADMIN_TOKEN source at startup: %s", _source)
 
 @app.post("/chat")
 async def chat(req: ChatRequest):
@@ -92,4 +116,30 @@ async def get_status():
 async def get_relations():
 
     return JSONResponse(content=brain.get_relations())
+
+
+# Admin import endpoint: POST a full memory dump (JSON) to replace or merge server memory.
+# Protect with a token via the IMPORT_ADMIN_TOKEN environment variable.
+@app.post("/admin/import-memory")
+async def import_memory(request: Request):
+    token, src = _get_import_token_source()
+    if src:
+        logger.info("Using IMPORT_ADMIN_TOKEN from %s", src)
+    header = request.headers.get("Authorization")
+    if not token:
+        raise HTTPException(status_code=503, detail="Import endpoint not configured")
+    if not header or header != f"Bearer {token}":
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    payload = await request.json()
+    # payload should be a dict representing memory.json
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=400, detail="Invalid payload, expected JSON object")
+    # merge: update existing keys, overwrite lists/dicts
+    try:
+        brain.memory.update(payload)
+        brain.save_memory()
+        return {"status": "imported", "keys": list(payload.keys())}
+    except Exception as e:
+        logger.exception("Failed to import memory")
+        raise HTTPException(status_code=500, detail=str(e))
 
