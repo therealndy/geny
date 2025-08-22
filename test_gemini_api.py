@@ -1,20 +1,27 @@
 import os
 
-import google.generativeai as genai
-
-# Use environment variable or paste your API key below
-API_KEY = os.getenv("GENAI_API_KEY") or "PASTE_YOUR_API_KEY_HERE"
-
-if not API_KEY or API_KEY == "PASTE_YOUR_API_KEY_HERE":
-    print(
-        "ERROR: Please set GENAI_API_KEY environment variable or paste your Gemini API key in the script."
-    )
-    exit(1)
+import pytest
 
 try:
-    genai.configure(api_key=API_KEY)
+    import google.generativeai as genai  # type: ignore
+except Exception:
+    genai = None
+
+
+def test_gemini_api_live():
+    """Live integration test for Gemini — skipped when GENAI_API_KEY is not set.
+
+    This test intentionally skips on CI unless a secret `GENAI_API_KEY` is provided
+    so developers can run it locally with a .env file for manual verification.
+    """
+    api_key = os.getenv("GENAI_API_KEY")
+    if not api_key or genai is None:
+        pytest.skip(
+            "Skipping live Gemini test: GENAI_API_KEY not set or genai client missing"
+        )
+
+    genai.configure(api_key=api_key)
     model = genai.GenerativeModel("models/gemini-2.5-flash")
     response = model.generate_content("Hello Gemini, are you working?")
-    print("Gemini response:", response.text if hasattr(response, "text") else response)
-except Exception as e:
-    print("Gemini API error:", e)
+    # Ensure we received a response object (basic smoke check)
+    assert response is not None
