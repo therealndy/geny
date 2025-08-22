@@ -47,6 +47,12 @@ API_KEY = os.getenv("GENAI_API_KEY") or os.getenv("GOOGLE_API_KEY")
 if not API_KEY:
     API_KEY = _get_api_key_from_secret_manager()
 
+# Startup diagnostic (do not log the key itself)
+try:
+    logger.info("GENAI API key present: %s, google.generativeai available: %s", bool(API_KEY), genai is not None)
+except Exception:
+    pass
+
 
 class CircuitBreaker:
     CLOSED = "closed"
