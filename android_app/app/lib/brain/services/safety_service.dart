@@ -25,7 +25,10 @@ class SafetyService {
     // basic profanity list (expand as needed)
     final profanities = ['shit', 'fuck', 'damn'];
     for (var p in profanities) {
-      out = out.replaceAll(RegExp('\\b' + RegExp.escape(p) + '\\b', caseSensitive: false), '[censored]');
+      out = out.replaceAll(
+        RegExp('\\b${RegExp.escape(p)}\\b', caseSensitive: false),
+        '[censored]',
+      );
     }
 
     // simple PII-ish detection: email-like patterns -> redact

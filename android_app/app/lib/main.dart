@@ -54,10 +54,10 @@ class GenyApp extends StatelessWidget {
         brightness: Brightness.dark,
         scaffoldBackgroundColor: Color(0xFF181A20),
         colorScheme: ColorScheme.dark(
-          primary: Color(0xFF7F5AF0),
-          secondary: Color(0xFF2CB67D),
-          background: Color(0xFF181A20),
-          surface: Color(0xFF181A20),
+          primary: const Color(0xFF7F5AF0),
+          secondary: const Color(0xFF2CB67D),
+          // 'background' is deprecated; use 'surface' consistently for our dark theme
+          surface: const Color(0xFF181A20),
         ),
         textTheme: const TextTheme(
           bodyLarge: TextStyle(color: Colors.white, fontSize: 18),
@@ -171,9 +171,9 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
                   ),
                   padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 18),
                   decoration: BoxDecoration(
-                    color: msg.isGeny
-                        ? Theme.of(context).colorScheme.surface
-                        : Theme.of(context).colorScheme.primary.withOpacity(0.8),
+          color: msg.isGeny
+            ? Theme.of(context).colorScheme.surface
+            : Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(22),
                     boxShadow: [
                       BoxShadow(
@@ -300,6 +300,7 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
 
 // Livshistoria-tab
 class LifeTab extends StatefulWidget {
+  const LifeTab({super.key});
   @override
   State<LifeTab> createState() => _LifeTabState();
 }
@@ -382,6 +383,7 @@ class _LifeTabState extends State<LifeTab> {
 
 // Ålder-tab
 class AgeTab extends StatefulWidget {
+  const AgeTab({super.key});
   @override
   State<AgeTab> createState() => _AgeTabState();
 }
@@ -452,6 +454,7 @@ class _AgeTabState extends State<AgeTab> {
 
 // Status-tab
 class StatusTab extends StatefulWidget {
+  const StatusTab({super.key});
   @override
   State<StatusTab> createState() => _StatusTabState();
 }
@@ -522,6 +525,7 @@ class _StatusTabState extends State<StatusTab> {
 
 // Relationer-tab
 class RelationsTab extends StatefulWidget {
+  const RelationsTab({super.key});
   @override
   State<RelationsTab> createState() => _RelationsTabState();
 }
