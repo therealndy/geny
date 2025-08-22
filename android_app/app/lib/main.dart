@@ -12,8 +12,12 @@ import 'brain/services/thought_loop_service.dart';
 import 'brain/services/safety_service.dart';
 import 'brain/providers/brain_provider.dart';
 
-// Change this to your Render backend URL
-const String backendBaseUrl = 'https://geny-1.onrender.com';
+// Backend base URL. Override at build/run time with --dart-define=BACKEND_URL=https://your-host
+// Example: flutter run --dart-define=BACKEND_URL=http://10.0.2.2:8000
+const String backendBaseUrl = String.fromEnvironment(
+  'BACKEND_URL',
+  defaultValue: 'https://geny-1.onrender.com',
+);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

@@ -1,0 +1,36 @@
+name: Post-deploy smoke tests (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'Base URL to test (e.g. https://geny-1.onrender.com)'
+        required: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Health check
+        run: |
+          URL=${{ github.event.inputs.url }}
+          echo "Checking $URL/healthz"
+          curl -sSf "$URL/healthz" || (echo 'healthz failed' && exit 1)
+          echo 'healthz OK'
+
+      - name: Chat endpoint test
+        run: |
+          URL=${{ github.event.inputs.url }}
+          echo "POST $URL/chat"
+          cat > /tmp/ci_chat_test.py <<'PY'
+import sys, json, urllib.request
+url = sys.argv[1].rstrip('/') + '/chat'
+req = urllib.request.Request(url, data=json.dumps({'message':'CI smoke'}).encode('utf-8'), headers={'Content-Type':'application/json'})
+try:
+    with urllib.request.urlopen(req, timeout=10) as r:
+        print('OK', r.read().decode('utf-8')[:400])
+except Exception as e:
+    print('CHAT-FAILED', e)
+    sys.exit(1)
+PY
+          python /tmp/ci_chat_test.py "$URL"
