@@ -19,3 +19,8 @@ backend/nohup.out
 # Secrets
 key.json
 vertex-key.json
+path/to/import_token.txt
+
+# Local environment files
+.env
+local_settings.py

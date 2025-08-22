@@ -1,7 +1,6 @@
-import asyncio
 import pytest
 
-import asyncio
+from geny import gemini_api
 
 
 def pytest_configure(config):
@@ -19,8 +18,6 @@ def no_network(monkeypatch):
         raise RuntimeError("Network calls disabled in tests")
 
     monkeypatch.setattr(socket, "create_connection", fake_create_connection)
-
-from geny import gemini_api
 
 
 @pytest.fixture(autouse=True)

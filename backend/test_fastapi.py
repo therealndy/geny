@@ -1,7 +1,6 @@
-import pytest
 from fastapi.testclient import TestClient
-from backend.main import app
 
+from backend.main import app
 
 client = TestClient(app)
 
@@ -24,7 +23,8 @@ def test_chat_monkeypatch(monkeypatch):
 
     # patch the brain instance used by the app
     import backend.main as bm
-    monkeypatch.setattr(bm.brain, 'generate_reply', fake_generate)
+
+    monkeypatch.setattr(bm.brain, "generate_reply", fake_generate)
     r = client.post("/chat", json={"message": "x"})
     assert r.status_code == 200
     assert r.json()["reply"] == "patched"

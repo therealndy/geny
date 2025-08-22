@@ -1,0 +1,43 @@
+name: Auto-fix and tests
+
+on:
+  push:
+    branches: [feat/auto-fixes-clean, main]
+  schedule:
+    - cron: '0 3 * * *' # daily at 03:00 UTC
+  workflow_dispatch: {}
+
+jobs:
+  lint-and-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      - name: Install tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install black ruff isort pytest
+      - name: Run formatters (black/isort/ruff)
+        run: |
+          black --check . || true
+          isort --check-only . || true
+          ruff check . || true
+          # Run formatters to apply fixes
+          black .
+          isort .
+          ruff format . || true
+      - name: Run tests
+        run: pytest -q
+      - name: Commit and create PR if fixes
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ci/auto-fixes
+          commit-message: "chore: apply automatic code style fixes"
+          title: "chore: apply automatic code style fixes"
+          body: |
+            This PR contains automatic formatting and lint fixes applied by the CI workflow.
+          labels: automated, ci
