@@ -16,6 +16,11 @@
       "message": "hello",
       "reply": "BRAIN -<br>Hi!<br>I have a lot left to discover!",
       "source": "greeting"
+    },
+    {
+      "timestamp": "2025-08-22T12:10:53.075016",
+      "message": "hello from local smoke",
+      "reply": "BRAIN - I remember we discussed this before: 'hello' on 2025-08-22T10:26:12.548329. Would you like to continue that conversation?"
     }
   ],
   "sync_data": {
