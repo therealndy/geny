@@ -24,3 +24,6 @@ path/to/import_token.txt
 # Local environment files
 .env
 local_settings.py
+
+# Local database file (runtime state) - should not be tracked
+memory.db
