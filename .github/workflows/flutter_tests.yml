@@ -28,7 +28,8 @@ jobs:
       - name: Check formatting
         run: |
           cd android_app/app
-          flutter format --set-exit-if-changed .
+          # Use `dart format` which is available in the runner's SDK
+          dart format --set-exit-if-changed .
 
       - name: Analyze
         run: |
