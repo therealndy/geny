@@ -824,9 +824,10 @@ class GenyBrain:
                     reply = "BRAIN - I'm here and listening! Could you tell me more or ask a question?"
                     now = datetime.utcnow().isoformat()
                     entry = {"timestamp": now, "message": message, "reply": reply, "source": "fallback"}
+                    # Persist safely under the async lock
                     async with self._lock:
                         self.memory.setdefault("interactions", []).append(entry)
-                    asyncio.create_task(self._async_save())
+                        asyncio.create_task(self._async_save())
                 return reply
             # Always return reply at the end
             return reply
