@@ -6,6 +6,7 @@ Behavior:
   available, fall back to a safe local echo implementation for tests.
 - Exposes an async `generate_reply(prompt)` function used by the app.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -30,7 +31,9 @@ SECRET_PROJECT = os.getenv("GENAI_SECRET_PROJECT", "geny-469516")
 SECRET_NAME = os.getenv("GENAI_SECRET_NAME", "genai-api-key")
 
 
-def _get_api_key_from_secret_manager(project: str = SECRET_PROJECT, secret_name: str = SECRET_NAME) -> Optional[str]:
+def _get_api_key_from_secret_manager(
+    project: str = SECRET_PROJECT, secret_name: str = SECRET_NAME
+) -> Optional[str]:
     try:
         client = secretmanager.SecretManagerServiceClient()
         name = f"projects/{project}/secrets/{secret_name}/versions/latest"
@@ -49,7 +52,11 @@ if not API_KEY:
 
 # Startup diagnostic (do not log the key itself)
 try:
-    logger.info("GENAI API key present: %s, google.generativeai available: %s", bool(API_KEY), genai is not None)
+    logger.info(
+        "GENAI API key present: %s, google.generativeai available: %s",
+        bool(API_KEY),
+        genai is not None,
+    )
 except Exception:
     pass
 
@@ -89,7 +96,7 @@ _circuit = CircuitBreaker(fail_threshold=3, recovery_timeout=30)
 
 
 def _jittered_backoff(attempt: int, base: float = 0.5, cap: float = 10.0) -> float:
-    expo = min(cap, base * (2 ** attempt))
+    expo = min(cap, base * (2**attempt))
     return expo * (0.5 + random.random() * 0.5)
 
 
@@ -107,6 +114,7 @@ async def _call_gemini(prompt: str, max_retries: int = 3, timeout: int = None) -
 
     last_err = None
     for attempt in range(max_retries):
+
         def blocking_call():
             genai.configure(api_key=API_KEY)
             model = genai.GenerativeModel(MODEL)
@@ -120,7 +128,9 @@ async def _call_gemini(prompt: str, max_retries: int = 3, timeout: int = None) -
 
         try:
             if timeout:
-                text = await asyncio.wait_for(asyncio.to_thread(blocking_call), timeout=timeout)
+                text = await asyncio.wait_for(
+                    asyncio.to_thread(blocking_call), timeout=timeout
+                )
             else:
                 text = await asyncio.to_thread(blocking_call)
             # Ensure we always return a string
@@ -133,13 +143,21 @@ async def _call_gemini(prompt: str, max_retries: int = 3, timeout: int = None) -
             return text
         except asyncio.TimeoutError as e:
             last_err = e
-            logger.exception("Gemini API timeout on attempt %d: %s", attempt + 1, str(e))
+            logger.exception(
+                "Gemini API timeout on attempt %d: %s", attempt + 1, str(e)
+            )
             _circuit.record_failure()
         except Exception as e:
             last_err = e
             err_text = str(e)
-            logger.exception("Gemini API error on attempt %d: %s", attempt + 1, err_text)
-            if "401" in err_text or "API key not valid" in err_text or "Unauthorized" in err_text:
+            logger.exception(
+                "Gemini API error on attempt %d: %s", attempt + 1, err_text
+            )
+            if (
+                "401" in err_text
+                or "API key not valid" in err_text
+                or "Unauthorized" in err_text
+            ):
                 _circuit.record_failure()
                 return f"[Gemini 401] {err_text}"
             _circuit.record_failure()
@@ -150,7 +168,9 @@ async def _call_gemini(prompt: str, max_retries: int = 3, timeout: int = None) -
     return f"[Gemini error] Failed after {max_retries} attempts: {last_err}"
 
 
-async def generate_reply(prompt: str, *, max_retries: int = 3, timeout: Optional[float] = 15) -> str:
+async def generate_reply(
+    prompt: str, *, max_retries: int = 3, timeout: Optional[float] = 15
+) -> str:
     """Public async function used by the app.
 
     If an API key is configured (env or Secret Manager) this will call Gemini.

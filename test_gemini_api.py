@@ -1,11 +1,14 @@
-import google.generativeai as genai
 import os
+
+import google.generativeai as genai
 
 # Use environment variable or paste your API key below
 API_KEY = os.getenv("GENAI_API_KEY") or "PASTE_YOUR_API_KEY_HERE"
 
 if not API_KEY or API_KEY == "PASTE_YOUR_API_KEY_HERE":
-    print("ERROR: Please set GENAI_API_KEY environment variable or paste your Gemini API key in the script.")
+    print(
+        "ERROR: Please set GENAI_API_KEY environment variable or paste your Gemini API key in the script."
+    )
     exit(1)
 
 try:

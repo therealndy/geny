@@ -1,19 +1,19 @@
 import asyncio
-import pytest
 
-import pytest
+from geny import gemini_api
 
 
 def test_placeholder():
     # This placeholder ensures pytest finds at least one test in this module
     assert 1 + 1 == 2
 
-from geny import gemini_api
+
 def test_gemini_circuit_breaker(monkeypatch):
     # Replace the genai.GenerativeModel with a fake model whose generate_content raises.
     class FakeModel:
         def __init__(self, model_name):
             pass
+
         def generate_content(self, prompt):
             raise Exception("API key not valid")
 

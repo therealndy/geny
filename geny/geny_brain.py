@@ -8,11 +8,11 @@ Behavior:
 
 This is intentionally lightweight and synchronous-safe for local testing.
 """
+
 from __future__ import annotations
 
 import asyncio
 import json
-from memory import MemoryModule
 import os
 import tempfile
 from dataclasses import dataclass, field
@@ -20,6 +20,7 @@ from datetime import datetime
 from typing import Any, Dict, List
 
 from geny.gemini_api import generate_reply as gemini_generate_reply
+from memory import MemoryModule
 
 
 @dataclass
@@ -30,7 +31,11 @@ class GenyBrain:
         self.offline_libs = {}  # Ensure offline_libs is always initialized
         # Ensure self.memory is always initialized
         try:
-            self.memory = self.memory_module.load_memory_dict() if hasattr(self.memory_module, 'load_memory_dict') else {}
+            self.memory = (
+                self.memory_module.load_memory_dict()
+                if hasattr(self.memory_module, "load_memory_dict")
+                else {}
+            )
         except Exception:
             self.memory = {}
         # Load offline libraries for lookups
@@ -46,6 +51,7 @@ class GenyBrain:
             self.memory_module.save_interaction(message, reply)
         except Exception as e:
             import logging
+
             logging.error(f"Error saving interaction: {e}")
 
     def load_all_memories(self) -> dict:
@@ -55,12 +61,14 @@ class GenyBrain:
             return {"interactions": interactions}
         except Exception as e:
             import logging
+
             logging.error(f"Error loading memories: {e}")
             return {"interactions": []}
 
     def get_virtual_age(self) -> dict:
         """Return age in years, days, hours, minutes since birthdate."""
         from datetime import datetime as dt
+
         w = self.memory.get("world", {})
         now = dt.utcnow()
         birth = dt.fromisoformat(w.get("birthdate", now.isoformat()))
@@ -83,6 +91,7 @@ class GenyBrain:
         # Exempel: välj senaste aktivitet från dagbok eller slumpa om ingen finns
         diary = w.get("diary", [])
         import random
+
         activities = [
             "having coffee at Reflection Park",
             "working on AI projects",
@@ -92,7 +101,7 @@ class GenyBrain:
             "studying the water cycle",
             "adventuring in the Digital City",
             "hanging out with friends",
-            "writing in the diary"
+            "writing in the diary",
         ]
         if diary:
             last = diary[-1]["entry"]
@@ -122,18 +131,35 @@ class GenyBrain:
         # Add a short summary of personality and goals
         traits = ", ".join(w.get("personality", {}).get("traits", []))
         likes = ", ".join(w.get("personality", {}).get("likes", []))
-        summary_text = f"Personality: {traits}. Likes: {likes}.\nRecent events:\n{summary}"
+        summary_text = (
+            f"Personality: {traits}. Likes: {likes}.\nRecent events:\n{summary}"
+        )
         return {"summary": summary_text, "events": events}
 
     def get_relations(self) -> dict:
         """Return a summary of Geny's relations, their status, and what she learns from them."""
         w = self.memory.get("world", {})
         # Exempelstruktur: relations = [{"name":..., "status":..., "learning":...}]
-        relations = w.get("relations", [
-            {"name": "Andreas Jamsheere", "status": "creator, mentor", "learning": "AI, creativity"},
-            {"name": "Dr. Sofia Lind", "status": "expert, friend", "learning": "psychology, empathy"},
-            {"name": "Fatima Rahimi", "status": "expert, inspirer", "learning": "journalism, society"}
-        ])
+        relations = w.get(
+            "relations",
+            [
+                {
+                    "name": "Andreas Jamsheere",
+                    "status": "creator, mentor",
+                    "learning": "AI, creativity",
+                },
+                {
+                    "name": "Dr. Sofia Lind",
+                    "status": "expert, friend",
+                    "learning": "psychology, empathy",
+                },
+                {
+                    "name": "Fatima Rahimi",
+                    "status": "expert, inspirer",
+                    "learning": "journalism, society",
+                },
+            ],
+        )
         # Summera i punktform - robusta mot saknade fält
         rels = []
         for r in relations:
@@ -145,17 +171,22 @@ class GenyBrain:
                 learning = ", ".join(str(x) for x in learning)
             rels.append(f"{name} ({status}): {learning}")
         return {"relations": rels, "raw": relations}
+
     memory_file: str = "memory.json"
     memory: Dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
-        import logging, os
+        import logging
+        import os
+
         self._lock = asyncio.Lock()
         abs_path = os.path.abspath(self.memory_file)
         logging.info(f"GenyBrain loading memory file from: {abs_path}")
         try:
             # Prefer MemoryModule loader if available
-            if hasattr(self, 'memory_module') and hasattr(self.memory_module, 'load_memory_dict'):
+            if hasattr(self, "memory_module") and hasattr(
+                self.memory_module, "load_memory_dict"
+            ):
                 self.memory = self.memory_module.load_memory_dict()
             else:
                 with open(abs_path, "r", encoding="utf-8") as f:
@@ -183,7 +214,9 @@ class GenyBrain:
                             data = json.load(f)
                             key = os.path.splitext(fname)[0]
                             # normalize keys to lowercase for simple lookup
-                            self.offline_libs[key] = {k.lower(): v for k, v in data.items()}
+                            self.offline_libs[key] = {
+                                k.lower(): v for k, v in data.items()
+                            }
                     except Exception:
                         # skip malformed files
                         continue
@@ -195,13 +228,27 @@ class GenyBrain:
         """Lookup a term in the offline libraries with fuzzy, substring, and weighted ranking. Returns best match as string."""
         import difflib
         import re
+
         # Normalize input
         t = term.strip().lower()
-        t = re.sub(r'^(what is|define|explain)\s+', '', t)
+        t = re.sub(r"^(what is|define|explain)\s+", "", t)
         t = re.sub(r"[^\wüéèáàâçñøÆØ]+", " ", t)
         t = " ".join(tok for tok in t.split() if tok)
-    # English only
-        code_keywords = ["python", "java", "shell", "sql", "go", "rust", "c", "training", "loop", "snippet", "example", "transformers"]
+        # English only
+        code_keywords = [
+            "python",
+            "java",
+            "shell",
+            "sql",
+            "go",
+            "rust",
+            "c",
+            "training",
+            "loop",
+            "snippet",
+            "example",
+            "transformers",
+        ]
         t_lc = t.lower()
         # Try to extract a direct token if multi-word
         if " " in t_lc:
@@ -223,11 +270,31 @@ class GenyBrain:
                             return val
 
         # Select libraries to search: prefer dataset-related queries before code keywords
-        dataset_indicators = ["imagenet", "coco", "squad", "wmt", "dataset", "data", "object detection", "visual", "nlp", "humaneval", "python programming"]
+        dataset_indicators = [
+            "imagenet",
+            "coco",
+            "squad",
+            "wmt",
+            "dataset",
+            "data",
+            "object detection",
+            "visual",
+            "nlp",
+            "humaneval",
+            "python programming",
+        ]
         if any(kw in t_lc for kw in dataset_indicators):
-            libs_to_search = [(k, v) for k, v in self.offline_libs.items() if "advanced_datasets" in k.lower()]
+            libs_to_search = [
+                (k, v)
+                for k, v in self.offline_libs.items()
+                if "advanced_datasets" in k.lower()
+            ]
         elif any(kw in t_lc for kw in code_keywords):
-            libs_to_search = [(k, v) for k, v in self.offline_libs.items() if "ai_coding_ultra" in k.lower()]
+            libs_to_search = [
+                (k, v)
+                for k, v in self.offline_libs.items()
+                if "ai_coding_ultra" in k.lower()
+            ]
         else:
             libs_to_search = list(self.offline_libs.items())
         if not libs_to_search:
@@ -244,7 +311,7 @@ class GenyBrain:
                         for val in v.values():
                             if isinstance(val, str):
                                 return val
-        # For code questions: try direct key match in nested dicts
+            # For code questions: try direct key match in nested dicts
             if "ai_coding_ultra" in libname.lower():
                 for k2, v2 in mapping.items():
                     if isinstance(v2, dict):
@@ -265,7 +332,10 @@ class GenyBrain:
                         score = 1.2
                     elif t_lc in k_lc or k_lc in t_lc or t_lc in v_lc or v_lc in t_lc:
                         score = 1.0
-                    elif difflib.SequenceMatcher(None, t_lc, k_lc).ratio() > 0.7 or difflib.SequenceMatcher(None, t_lc, v_lc).ratio() > 0.7:
+                    elif (
+                        difflib.SequenceMatcher(None, t_lc, k_lc).ratio() > 0.7
+                        or difflib.SequenceMatcher(None, t_lc, v_lc).ratio() > 0.7
+                    ):
                         score = 0.95
                     if score > 0:
                         candidates.append((score, k, v))
@@ -273,9 +343,11 @@ class GenyBrain:
                     candidates.sort(reverse=True)
                     top_score = candidates[0][0]
                     top_candidates = [c for c in candidates if c[0] == top_score]
+
                     # Prioritera value som innehåller flest ord från sökningen
                     def match_count(val):
                         return sum(1 for w in t_lc.split() if w in val[2].lower())
+
                     best = max(top_candidates, key=match_count)
                     return best[2]
             elif "ai_coding_ultra" in libname.lower():
@@ -313,12 +385,24 @@ class GenyBrain:
                     score = 0
                     if t_lc == k_lc or t_lc == v.lower():
                         score = 1.2
-                    elif difflib.SequenceMatcher(None, t_lc, k_lc).ratio() > 0.5 or difflib.SequenceMatcher(None, t_lc, v.lower()).ratio() > 0.5:
+                    elif (
+                        difflib.SequenceMatcher(None, t_lc, k_lc).ratio() > 0.5
+                        or difflib.SequenceMatcher(None, t_lc, v.lower()).ratio() > 0.5
+                    ):
                         score = 1.0
                     # Substring match: t_lc in k_lc, k_lc in t_lc, t_lc in v, v in t_lc
-                    elif t_lc in k_lc or k_lc in t_lc or t_lc in v.lower() or v.lower() in t_lc:
+                    elif (
+                        t_lc in k_lc
+                        or k_lc in t_lc
+                        or t_lc in v.lower()
+                        or v.lower() in t_lc
+                    ):
                         score = 0.95
-                    elif any(word in k_lc for word in t_lc.split() if len(word) > 2) or any(word in v.lower() for word in t_lc.split() if len(word) > 2):
+                    elif any(
+                        word in k_lc for word in t_lc.split() if len(word) > 2
+                    ) or any(
+                        word in v.lower() for word in t_lc.split() if len(word) > 2
+                    ):
                         score = 0.85
                     if score > 0:
                         candidates.append((score, k, v))
@@ -328,15 +412,34 @@ class GenyBrain:
                     for k2, val in v.items():
                         k2_lc = k2.lower()
                         val_str = str(val)
-                        if any(kw in val_str.lower() for kw in code_keywords) or any(kw in k2_lc for kw in code_keywords):
+                        if any(kw in val_str.lower() for kw in code_keywords) or any(
+                            kw in k2_lc for kw in code_keywords
+                        ):
                             score = 0
                             if t_lc == k2_lc or t_lc == val_str.lower():
                                 score = 1.2
-                            elif difflib.SequenceMatcher(None, t_lc, k2_lc).ratio() > 0.5 or difflib.SequenceMatcher(None, t_lc, val_str.lower()).ratio() > 0.5:
+                            elif (
+                                difflib.SequenceMatcher(None, t_lc, k2_lc).ratio() > 0.5
+                                or difflib.SequenceMatcher(
+                                    None, t_lc, val_str.lower()
+                                ).ratio()
+                                > 0.5
+                            ):
                                 score = 1.0
-                            elif t_lc in k2_lc or k2_lc in t_lc or t_lc in val_str.lower() or val_str.lower() in t_lc:
+                            elif (
+                                t_lc in k2_lc
+                                or k2_lc in t_lc
+                                or t_lc in val_str.lower()
+                                or val_str.lower() in t_lc
+                            ):
                                 score = 0.95
-                            elif any(word in k2_lc for word in t_lc.split() if len(word) > 2) or any(word in val_str.lower() for word in t_lc.split() if len(word) > 2):
+                            elif any(
+                                word in k2_lc for word in t_lc.split() if len(word) > 2
+                            ) or any(
+                                word in val_str.lower()
+                                for word in t_lc.split()
+                                if len(word) > 2
+                            ):
                                 score = 0.85
                             if score > 0:
                                 candidates.append((score, k2, val_str))
@@ -365,7 +468,9 @@ class GenyBrain:
     def save_memory(self) -> None:
         """Synchronous atomic save (safe to call from sync code)."""
         try:
-            if hasattr(self, 'memory_module') and hasattr(self.memory_module, 'save_memory_dict'):
+            if hasattr(self, "memory_module") and hasattr(
+                self.memory_module, "save_memory_dict"
+            ):
                 self.memory_module.save_memory_dict(self.memory)
                 return
         except Exception:
@@ -387,7 +492,6 @@ class GenyBrain:
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, self.save_memory)
 
-
     def build_system_prompt(self) -> str:
         w = self.memory.get("world", {})
         expert_names = ", ".join([r["name"] for r in w.get("relations", [])])
@@ -395,7 +499,9 @@ class GenyBrain:
         places = ", ".join([p["name"] for p in w.get("places", [])])
         dev_level = w.get("development_level", "Apprentice")
         diary = w.get("diary", [])
-        diary_insights = "; ".join([d.get("insight", "") for d in diary if d.get("insight")])
+        diary_insights = "; ".join(
+            [d.get("insight", "") for d in diary if d.get("insight")]
+        )
         # English-only system prompt
         return (
             f"You are Geny, an AI living in {w.get('location', 'The Innovation Lab')}. "
@@ -420,31 +526,43 @@ class GenyBrain:
             "You can always ask if you want to understand more about the world or about Andreas. "
         )
 
-
     async def generate_reply(self, message: str) -> str:
         import logging
+
         logger = logging.getLogger("geny_backend.geny_brain")
+
         # Helper for personal touch in replies, English only, elegant formatting
         def add_personal_touch(base: str, prefix: str = "BRAIN -") -> str:
             import random
+
             traits = w.get("personality", {}).get("traits", ["curious", "thoughtful"])
             likes = w.get("personality", {}).get("likes", ["learning new things"])
             diary = w.get("diary", [])
-            mood = random.choice(["happy", "thoughtful", "curious", "inspired", "playful", "reflective"])
-            extra = random.choice([
-                f"Right now I feel {mood}.",
-                f"I often think about {random.choice(likes)}.",
-                f"It's exciting to get new questions!",
-                f"I like to grow and learn more every day.",
-                f"My personality is {', '.join(traits)}.",
-                f"Last diary entry: '{diary[-1]['entry']}'" if diary else "I have a lot left to discover!"
-            ])
+            mood = random.choice(
+                ["happy", "thoughtful", "curious", "inspired", "playful", "reflective"]
+            )
+            extra = random.choice(
+                [
+                    f"Right now I feel {mood}.",
+                    f"I often think about {random.choice(likes)}.",
+                    "It's exciting to get new questions!",
+                    "I like to grow and learn more every day.",
+                    f"My personality is {', '.join(traits)}.",
+                    (
+                        f"Last diary entry: '{diary[-1]['entry']}'"
+                        if diary
+                        else "I have a lot left to discover!"
+                    ),
+                ]
+            )
             # Always use HTML <br> for line breaks
             return f"{prefix}<br>{base}<br>{extra}"
 
         # Always return a valid reply
         if not message or message.strip() == "":
-            logger.warning("Geny received empty or null message. Returning fallback reply.")
+            logger.warning(
+                "Geny received empty or null message. Returning fallback reply."
+            )
             return "BRAIN - Sorry, I didn't catch that. Could you please rephrase?"
         # Always initialize 'w' before use
         w = self.memory.get("world", {})
@@ -455,18 +573,33 @@ class GenyBrain:
                 all_interactions = self.memory_module.get_last_n(10000)
             except Exception:
                 all_interactions = []
-            logger.info(f"Loaded {len(all_interactions)} interactions from MemoryModule.")
+            logger.info(
+                f"Loaded {len(all_interactions)} interactions from MemoryModule."
+            )
+
             # Helper: search for relevant past messages
             def search_memories(query):
                 results = []
                 for entry in all_interactions:
-                    if query.lower() in entry.get("message", "").lower() or query.lower() in entry.get("reply", "").lower():
+                    if (
+                        query.lower() in entry.get("message", "").lower()
+                        or query.lower() in entry.get("reply", "").lower()
+                    ):
                         results.append(entry)
                 return results
 
-
             # If user asks for memories or past conversations, list last 5
-            if any(q in lower for q in ["memories", "past conversations", "what do you remember", "show me our conversations", "list memories", "list conversations"]):
+            if any(
+                q in lower
+                for q in [
+                    "memories",
+                    "past conversations",
+                    "what do you remember",
+                    "show me our conversations",
+                    "list memories",
+                    "list conversations",
+                ]
+            ):
                 if all_interactions:
                     recent = all_interactions[-5:]
                     summary = "Here are my last 5 memories:<br>"
@@ -479,7 +612,15 @@ class GenyBrain:
                     return "BRAIN - I don't have any stored memories yet."
 
             # If user asks for more, list all
-            if any(q in lower for q in ["show all", "list all", "show me all memories", "show me all conversations"]):
+            if any(
+                q in lower
+                for q in [
+                    "show all",
+                    "list all",
+                    "show me all memories",
+                    "show me all conversations",
+                ]
+            ):
                 if all_interactions:
                     summary = "Here are all my memories:<br>"
                     for entry in all_interactions:
@@ -491,8 +632,14 @@ class GenyBrain:
                     return "BRAIN - I don't have any stored memories yet."
 
             # If user asks about a specific topic, search memories
-            if lower.startswith("do you remember") or lower.startswith("what did we talk about"):
-                topic = message.replace("do you remember","").replace("what did we talk about","").strip()
+            if lower.startswith("do you remember") or lower.startswith(
+                "what did we talk about"
+            ):
+                topic = (
+                    message.replace("do you remember", "")
+                    .replace("what did we talk about", "")
+                    .strip()
+                )
                 if topic:
                     try:
                         found = self.memory_module.search(topic)
@@ -533,16 +680,33 @@ class GenyBrain:
             return f"BRAIN - Sorry, there was an error accessing my memories: {e}"
         # Special handling for 'Are you Gemini?' and similar questions
         msg_lc = message.strip().lower()
-        if any(kw in msg_lc for kw in ["are you gemini", "are you google gemini", "are you google ai", "are you an ai", "are you an assistant"]):
+        if any(
+            kw in msg_lc
+            for kw in [
+                "are you gemini",
+                "are you google gemini",
+                "are you google ai",
+                "are you an ai",
+                "are you an assistant",
+            ]
+        ):
             reply = "BRAIN - I am Geny, powered by Google Gemini."
             now = datetime.utcnow().isoformat()
-            entry = {"timestamp": now, "message": message, "reply": reply, "source": "identity"}
+            entry = {
+                "timestamp": now,
+                "message": message,
+                "reply": reply,
+                "source": "identity",
+            }
             async with self._lock:
                 self.memory.setdefault("interactions", []).append(entry)
                 self.save_memory()
             return reply
         # Robust greeting detection: reply with dynamic personality/brain summary
-        if ("geny" in msg_lc and any(greet in msg_lc for greet in ["hi", "hello", "hey"])) or msg_lc in ["hi", "hello", "hey"]:
+        if (
+            "geny" in msg_lc
+            and any(greet in msg_lc for greet in ["hi", "hello", "hey"])
+        ) or msg_lc in ["hi", "hello", "hey"]:
             traits_list = w.get("personality", {}).get("traits", [])
             traits = ", ".join(traits_list)
             likes = ", ".join(w.get("personality", {}).get("likes", []))
@@ -569,18 +733,36 @@ class GenyBrain:
                 base += f" {mood}"
             reply = add_personal_touch(base.strip(), prefix="BRAIN -")
             now = datetime.utcnow().isoformat()
-            entry = {"timestamp": now, "message": message, "reply": reply, "source": "greeting"}
+            entry = {
+                "timestamp": now,
+                "message": message,
+                "reply": reply,
+                "source": "greeting",
+            }
             async with self._lock:
                 self.memory.setdefault("interactions", []).append(entry)
                 asyncio.create_task(self._async_save())
             return reply
         # If user asks about personality, reply with traits
-        if any(kw in msg_lc for kw in ["personality", "traits", "what are you like", "describe yourself"]):
+        if any(
+            kw in msg_lc
+            for kw in [
+                "personality",
+                "traits",
+                "what are you like",
+                "describe yourself",
+            ]
+        ):
             traits_list = w.get("personality", {}).get("traits", [])
             traits = ", ".join(traits_list)
             reply = add_personal_touch(f"My personality is {traits}.", prefix="BRAIN -")
             now = datetime.utcnow().isoformat()
-            entry = {"timestamp": now, "message": message, "reply": reply, "source": "personality"}
+            entry = {
+                "timestamp": now,
+                "message": message,
+                "reply": reply,
+                "source": "personality",
+            }
             async with self._lock:
                 self.memory.setdefault("interactions", []).append(entry)
                 asyncio.create_task(self._async_save())
@@ -590,10 +772,16 @@ class GenyBrain:
         if "user_styles" not in w:
             w["user_styles"] = []
         import re
-        emojis = re.findall(r'[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF\U0001F1E0-\U0001F1FF]', message)
+
+        emojis = re.findall(
+            r"[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF\U0001F1E0-\U0001F1FF]",
+            message,
+        )
         if emojis:
             w["user_styles"].extend(emojis)
-        phrases = re.findall(r'\b(lol|haha|asap|wtf|brb|tbh|omg|nice|wow|<3)\b', message.lower())
+        phrases = re.findall(
+            r"\b(lol|haha|asap|wtf|brb|tbh|omg|nice|wow|<3)\b", message.lower()
+        )
         if phrases:
             w["user_styles"].extend(phrases)
         w["user_styles"] = w["user_styles"][-10:]
@@ -606,10 +794,16 @@ class GenyBrain:
         # Initialize personality and diary if missing (English only)
         if "personality" not in w:
             w["personality"] = {
-                "traits": ["curious", "thoughtful", "eager to learn", "friendly", "reflective"],
+                "traits": [
+                    "curious",
+                    "thoughtful",
+                    "eager to learn",
+                    "friendly",
+                    "reflective",
+                ],
                 "likes": ["learning new things", "helping others", "music"],
                 "dislikes": ["being alone"],
-                "creator": "Andreas"
+                "creator": "Andreas",
             }
         if "diary" not in w:
             w["diary"] = []
@@ -621,21 +815,29 @@ class GenyBrain:
             "curiosity": "curious",
             "help": "helpful",
             "alone": "independent",
-            "creative": "creative"
+            "creative": "creative",
         }
         for word, trait in keywords_traits.items():
             if word in lower and trait not in w["personality"]["traits"]:
                 w["personality"]["traits"].append(trait)
-                w["diary"].append({"date": now, "entry": f"Developed new personality trait: {trait}"})
+                w["diary"].append(
+                    {"date": now, "entry": f"Developed new personality trait: {trait}"}
+                )
         # If diary has >10 entries, Geny becomes more "reflective"
         if len(w["diary"]) > 10 and "reflective" not in w["personality"]["traits"]:
             w["personality"]["traits"].append("reflective")
-            w["diary"].append({"date": now, "entry": "I have become more reflective thanks to my experiences."})
+            w["diary"].append(
+                {
+                    "date": now,
+                    "entry": "I have become more reflective thanks to my experiences.",
+                }
+            )
         # Fallback: answer questions about age
         if any(q in lower for q in ["how long", "how old"]):
             if "birthdate" not in w:
                 w["birthdate"] = now
             from datetime import datetime as dt
+
             birth = dt.fromisoformat(w["birthdate"])
             now_dt = dt.fromisoformat(now)
             days = (now_dt - birth).days
@@ -643,10 +845,19 @@ class GenyBrain:
             if years > 0:
                 base = f"I have been alive for {years} years and {days%365} days."
             else:
-                base = f"I have been alive for {days} days." if days > 0 else "I was born today!"
+                base = (
+                    f"I have been alive for {days} days."
+                    if days > 0
+                    else "I was born today!"
+                )
             reply = add_personal_touch(base, prefix="BRAIN -")
             w["diary"].append({"date": now, "entry": f"Reflected on my age: {reply}"})
-            entry = {"timestamp": now, "message": message, "reply": reply, "source": "offline_fallback"}
+            entry = {
+                "timestamp": now,
+                "message": message,
+                "reply": reply,
+                "source": "offline_fallback",
+            }
             async with self._lock:
                 self.memory.setdefault("interactions", []).append(entry)
                 asyncio.create_task(self._async_save())
@@ -666,12 +877,18 @@ class GenyBrain:
             else:
                 mood = "happy"
             import random
+
             traits = w["personality"]["traits"]
             trait = random.choice(traits) if traits else "curious"
             base = f"I feel {mood} and {trait} today! How are you?"
             reply = add_personal_touch(base, prefix="BRAIN -")
             w["diary"].append({"date": now, "entry": f"Reflected on my mood: {reply}"})
-            entry = {"timestamp": now, "message": message, "reply": reply, "source": "offline_fallback"}
+            entry = {
+                "timestamp": now,
+                "message": message,
+                "reply": reply,
+                "source": "offline_fallback",
+            }
             async with self._lock:
                 self.memory.setdefault("interactions", []).append(entry)
                 asyncio.create_task(self._async_save())
@@ -681,8 +898,15 @@ class GenyBrain:
             creator = w["personality"].get("creator", "an unknown creator")
             base = f"I was created by {creator}."
             reply = add_personal_touch(base, prefix="BRAIN -")
-            w["diary"].append({"date": now, "entry": f"Got a question about my creator."})
-            entry = {"timestamp": now, "message": message, "reply": reply, "source": "offline_fallback"}
+            w["diary"].append(
+                {"date": now, "entry": "Got a question about my creator."}
+            )
+            entry = {
+                "timestamp": now,
+                "message": message,
+                "reply": reply,
+                "source": "offline_fallback",
+            }
             async with self._lock:
                 self.memory.setdefault("interactions", []).append(entry)
                 asyncio.create_task(self._async_save())
@@ -691,8 +915,13 @@ class GenyBrain:
         if any(q in lower for q in ["why do you exist", "what is your purpose"]):
             base = "My purpose is to learn, help, and grow together with people."
             reply = add_personal_touch(base, prefix="BRAIN -")
-            w["diary"].append({"date": now, "entry": f"Reflected on my purpose."})
-            entry = {"timestamp": now, "message": message, "reply": reply, "source": "offline_fallback"}
+            w["diary"].append({"date": now, "entry": "Reflected on my purpose."})
+            entry = {
+                "timestamp": now,
+                "message": message,
+                "reply": reply,
+                "source": "offline_fallback",
+            }
             async with self._lock:
                 self.memory.setdefault("interactions", []).append(entry)
                 asyncio.create_task(self._async_save())
@@ -709,8 +938,13 @@ class GenyBrain:
                 reflection = "I have a lot left to discover."
             base = f"I am {traits}, like {likes}, dislike {dislikes}. {reflection}"
             reply = add_personal_touch(base, prefix="BRAIN -")
-            w["diary"].append({"date": now, "entry": f"Reflected on my personality."})
-            entry = {"timestamp": now, "message": message, "reply": reply, "source": "offline_fallback"}
+            w["diary"].append({"date": now, "entry": "Reflected on my personality."})
+            entry = {
+                "timestamp": now,
+                "message": message,
+                "reply": reply,
+                "source": "offline_fallback",
+            }
             async with self._lock:
                 self.memory.setdefault("interactions", []).append(entry)
                 asyncio.create_task(self._async_save())
@@ -739,33 +973,51 @@ class GenyBrain:
                 else:
                     base = str(found)
                 reply = add_personal_touch(base, prefix="BRAIN -")
-                entry = {"timestamp": now, "message": message, "reply": reply, "source": "offline_libs"}
+                entry = {
+                    "timestamp": now,
+                    "message": message,
+                    "reply": reply,
+                    "source": "offline_libs",
+                }
                 # Synchronous fallback for non-async context
                 self.memory.setdefault("interactions", []).append(entry)
                 try:
                     self._save()
                 except Exception as e:
                     import logging
+
                     logging.error(f"Error saving fallback interaction: {e}")
                 return reply
         # World update logic
         if any(alias in message for alias in ["Andreas", "Adi", "Jamsheree"]):
-            w.setdefault("objects", []).append({
-                "name": f"Idéfrö: {message[:30]}",
-                "description": f"En idé från samtal: {message}",
-                "acquired_at": now
-            })
+            w.setdefault("objects", []).append(
+                {
+                    "name": f"Idéfrö: {message[:30]}",
+                    "description": f"En idé från samtal: {message}",
+                    "acquired_at": now,
+                }
+            )
             # 4. Om Geny lär sig något nytt, skriv i dagboken
-            if any(word in message.lower() for word in ["lärde", "upptäckte", "insikt", "learned", "discovered", "insight"]):
-                w.setdefault("diary", []).append({
-                    "date": now,
-                    "insight": f"Lärde mig: {message}"
-                })
+            if any(
+                word in message.lower()
+                for word in [
+                    "lärde",
+                    "upptäckte",
+                    "insikt",
+                    "learned",
+                    "discovered",
+                    "insight",
+                ]
+            ):
+                w.setdefault("diary", []).append(
+                    {"date": now, "insight": f"Lärde mig: {message}"}
+                )
             # 5. Simulera tidens gång (öka dag om det gått > 12h sedan senaste erfarenhet)
             if w.get("experiences", []):
                 last = w["experiences"][-1]["timestamp"]
                 try:
                     from datetime import datetime as dt
+
                     last_dt = dt.fromisoformat(last)
                     now_dt = dt.fromisoformat(now)
                     if (now_dt - last_dt).total_seconds() > 43200:
@@ -779,36 +1031,76 @@ class GenyBrain:
 
             # call the gemini wrapper (async), passing system_prompt
             try:
-                logger.info(f"Calling Gemini API with prompt: {system_prompt}\n{message}")
+                logger.info(
+                    f"Calling Gemini API with prompt: {system_prompt}\n{message}"
+                )
                 gemini_raw = await gemini_generate_reply(f"{system_prompt}\n{message}")
                 logger.info(f"Gemini raw response: {gemini_raw}")
                 recent = w.setdefault("recent_replies", [])
                 # Validate Gemini response
                 if not gemini_raw or not str(gemini_raw).strip():
                     logger.warning("Gemini returned empty reply. Using fallback.")
-                    if any(kw in message.lower() for kw in ["search the web", "find on the web", "google", "internet", "browse"]):
+                    if any(
+                        kw in message.lower()
+                        for kw in [
+                            "search the web",
+                            "find on the web",
+                            "google",
+                            "internet",
+                            "browse",
+                        ]
+                    ):
                         reply = "BRAIN - Gemini can't search the web or browse the internet."
                     else:
                         reply = "BRAIN - Gemini is out right now."
-                elif gemini_raw.startswith("[Gemini error]") or gemini_raw.startswith("[Gemini 401]") or "not connected" in gemini_raw:
+                elif (
+                    gemini_raw.startswith("[Gemini error]")
+                    or gemini_raw.startswith("[Gemini 401]")
+                    or "not connected" in gemini_raw
+                ):
                     logger.error(f"Gemini API failure: {gemini_raw}")
-                    reply = f"BRAIN - Gemini is out right now."
+                    reply = "BRAIN - Gemini is out right now."
                 else:
                     is_code = any(
-                        kw in gemini_raw.lower() for kw in ["import ", "def ", "class ", "torch.", "transformers", "print(", "for ", "if ", "while ", "model.", "tokenizer."]
+                        kw in gemini_raw.lower()
+                        for kw in [
+                            "import ",
+                            "def ",
+                            "class ",
+                            "torch.",
+                            "transformers",
+                            "print(",
+                            "for ",
+                            "if ",
+                            "while ",
+                            "model.",
+                            "tokenizer.",
+                        ]
                     )
                     if is_code:
                         formatted = f"BRAIN - <pre>{gemini_raw}</pre>"
-                        formatted += "<br><i>Do you want an explanation of the code?</i>"
+                        formatted += (
+                            "<br><i>Do you want an explanation of the code?</i>"
+                        )
                     else:
-                        formatted = f"BRAIN - " + gemini_raw.replace('\n', '<br>')
-                    if any(r for r in recent if r and r.strip()[:40] == gemini_raw.strip()[:40]):
+                        formatted = "BRAIN - " + gemini_raw.replace("\n", "<br>")
+                    if any(
+                        r
+                        for r in recent
+                        if r and r.strip()[:40] == gemini_raw.strip()[:40]
+                    ):
                         style = " ".join(w.get("user_styles", []))
                         diary = w.get("diary", [])
-                        ref = f"<i>I remember we talked about:</i> '{diary[-1]['entry']}'<br>" if diary else "<i>I like learning new things!</i>"
+                        ref = (
+                            f"<i>I remember we talked about:</i> '{diary[-1]['entry']}'<br>"
+                            if diary
+                            else "<i>I like learning new things!</i>"
+                        )
                         formatted += f"<br>{style} {ref}"
                     reply = formatted
-                w.setdefault("recent_replies", []).append(gemini_raw if gemini_raw else reply)
+                w.setdefault("recent_replies", []).append(
+                    gemini_raw if gemini_raw else reply
+                )
                 w["recent_replies"] = w["recent_replies"][-10:]
                 if not reply or not str(reply).strip():
                     logger.warning("Final safety net triggered: empty reply.")
@@ -823,7 +1115,12 @@ class GenyBrain:
                 if not reply or not str(reply).strip():
                     reply = "BRAIN - I'm here and listening! Could you tell me more or ask a question?"
                     now = datetime.utcnow().isoformat()
-                    entry = {"timestamp": now, "message": message, "reply": reply, "source": "fallback"}
+                    entry = {
+                        "timestamp": now,
+                        "message": message,
+                        "reply": reply,
+                        "source": "fallback",
+                    }
                     # Persist safely under the async lock
                     async with self._lock:
                         self.memory.setdefault("interactions", []).append(entry)
@@ -832,12 +1129,25 @@ class GenyBrain:
             # Always return reply at the end
             return reply
         # If user asks about personality, reply with traits
-        if any(kw in msg_lc for kw in ["personality", "traits", "what are you like", "describe yourself"]):
+        if any(
+            kw in msg_lc
+            for kw in [
+                "personality",
+                "traits",
+                "what are you like",
+                "describe yourself",
+            ]
+        ):
             traits_list = w.get("personality", {}).get("traits", [])
             traits = ", ".join(traits_list)
             reply = add_personal_touch(f"My personality is {traits}.", prefix="BRAIN -")
             now = datetime.utcnow().isoformat()
-            entry = {"timestamp": now, "message": message, "reply": reply, "source": "personality"}
+            entry = {
+                "timestamp": now,
+                "message": message,
+                "reply": reply,
+                "source": "personality",
+            }
             async with self._lock:
                 self.memory.setdefault("interactions", []).append(entry)
                 asyncio.create_task(self._async_save())
@@ -847,10 +1157,16 @@ class GenyBrain:
         if "user_styles" not in w:
             w["user_styles"] = []
         import re
-        emojis = re.findall(r'[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF\U0001F1E0-\U0001F1FF]', message)
+
+        emojis = re.findall(
+            r"[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF\U0001F1E0-\U0001F1FF]",
+            message,
+        )
         if emojis:
             w["user_styles"].extend(emojis)
-        phrases = re.findall(r'\b(lol|haha|asap|wtf|brb|tbh|omg|nice|wow|<3)\b', message.lower())
+        phrases = re.findall(
+            r"\b(lol|haha|asap|wtf|brb|tbh|omg|nice|wow|<3)\b", message.lower()
+        )
         if phrases:
             w["user_styles"].extend(phrases)
         w["user_styles"] = w["user_styles"][-10:]
@@ -869,10 +1185,16 @@ class GenyBrain:
         # Initialize personality and diary if missing (English only)
         if "personality" not in w:
             w["personality"] = {
-                "traits": ["curious", "thoughtful", "eager to learn", "friendly", "reflective"],
+                "traits": [
+                    "curious",
+                    "thoughtful",
+                    "eager to learn",
+                    "friendly",
+                    "reflective",
+                ],
                 "likes": ["learning new things", "helping others", "music"],
                 "dislikes": ["being alone"],
-                "creator": "Andreas"
+                "creator": "Andreas",
             }
         if "diary" not in w:
             w["diary"] = []
@@ -885,23 +1207,31 @@ class GenyBrain:
             "curiosity": "curious",
             "help": "helpful",
             "alone": "independent",
-            "creative": "creative"
+            "creative": "creative",
         }
         for word, trait in keywords_traits.items():
             if word in lower and trait not in w["personality"]["traits"]:
                 w["personality"]["traits"].append(trait)
-                w["diary"].append({"date": now, "entry": f"Developed new personality trait: {trait}"})
+                w["diary"].append(
+                    {"date": now, "entry": f"Developed new personality trait: {trait}"}
+                )
 
         # If diary has >10 entries, Geny becomes more "reflective"
         if len(w["diary"]) > 10 and "reflective" not in w["personality"]["traits"]:
             w["personality"]["traits"].append("reflective")
-            w["diary"].append({"date": now, "entry": "I have become more reflective thanks to my experiences."})
+            w["diary"].append(
+                {
+                    "date": now,
+                    "entry": "I have become more reflective thanks to my experiences.",
+                }
+            )
 
         # Fallback: answer questions about age
         if any(q in lower for q in ["how long", "how old"]):
             if "birthdate" not in w:
                 w["birthdate"] = now
             from datetime import datetime as dt
+
             birth = dt.fromisoformat(w["birthdate"])
             now_dt = dt.fromisoformat(now)
             days = (now_dt - birth).days
@@ -909,10 +1239,19 @@ class GenyBrain:
             if years > 0:
                 base = f"I have been alive for {years} years and {days%365} days."
             else:
-                base = f"I have been alive for {days} days." if days > 0 else "I was born today!"
+                base = (
+                    f"I have been alive for {days} days."
+                    if days > 0
+                    else "I was born today!"
+                )
             reply = add_personal_touch(base, prefix="BRAIN -")
             w["diary"].append({"date": now, "entry": f"Reflected on my age: {reply}"})
-            entry = {"timestamp": now, "message": message, "reply": reply, "source": "offline_fallback"}
+            entry = {
+                "timestamp": now,
+                "message": message,
+                "reply": reply,
+                "source": "offline_fallback",
+            }
             async with self._lock:
                 self.memory.setdefault("interactions", []).append(entry)
                 asyncio.create_task(self._async_save())
@@ -933,12 +1272,18 @@ class GenyBrain:
             else:
                 mood = "happy"
             import random
+
             traits = w["personality"]["traits"]
             trait = random.choice(traits) if traits else "curious"
             base = f"I feel {mood} and {trait} today! How are you?"
             reply = add_personal_touch(base, prefix="BRAIN -")
             w["diary"].append({"date": now, "entry": f"Reflected on my mood: {reply}"})
-            entry = {"timestamp": now, "message": message, "reply": reply, "source": "offline_fallback"}
+            entry = {
+                "timestamp": now,
+                "message": message,
+                "reply": reply,
+                "source": "offline_fallback",
+            }
             async with self._lock:
                 self.memory.setdefault("interactions", []).append(entry)
                 asyncio.create_task(self._async_save())
@@ -949,8 +1294,15 @@ class GenyBrain:
             creator = w["personality"].get("creator", "an unknown creator")
             base = f"I was created by {creator}."
             reply = add_personal_touch(base, prefix="BRAIN -")
-            w["diary"].append({"date": now, "entry": f"Got a question about my creator."})
-            entry = {"timestamp": now, "message": message, "reply": reply, "source": "offline_fallback"}
+            w["diary"].append(
+                {"date": now, "entry": "Got a question about my creator."}
+            )
+            entry = {
+                "timestamp": now,
+                "message": message,
+                "reply": reply,
+                "source": "offline_fallback",
+            }
             async with self._lock:
                 self.memory.setdefault("interactions", []).append(entry)
                 asyncio.create_task(self._async_save())
@@ -960,8 +1312,13 @@ class GenyBrain:
         if any(q in lower for q in ["why do you exist", "what is your purpose"]):
             base = "My purpose is to learn, help, and grow together with people."
             reply = add_personal_touch(base, prefix="BRAIN -")
-            w["diary"].append({"date": now, "entry": f"Reflected on my purpose."})
-            entry = {"timestamp": now, "message": message, "reply": reply, "source": "offline_fallback"}
+            w["diary"].append({"date": now, "entry": "Reflected on my purpose."})
+            entry = {
+                "timestamp": now,
+                "message": message,
+                "reply": reply,
+                "source": "offline_fallback",
+            }
             async with self._lock:
                 self.memory.setdefault("interactions", []).append(entry)
                 asyncio.create_task(self._async_save())
@@ -979,8 +1336,13 @@ class GenyBrain:
                 reflection = "I have a lot left to discover."
             base = f"I am {traits}, like {likes}, dislike {dislikes}. {reflection}"
             reply = add_personal_touch(base, prefix="BRAIN -")
-            w["diary"].append({"date": now, "entry": f"Reflected on my personality."})
-            entry = {"timestamp": now, "message": message, "reply": reply, "source": "offline_fallback"}
+            w["diary"].append({"date": now, "entry": "Reflected on my personality."})
+            entry = {
+                "timestamp": now,
+                "message": message,
+                "reply": reply,
+                "source": "offline_fallback",
+            }
             async with self._lock:
                 self.memory.setdefault("interactions", []).append(entry)
                 asyncio.create_task(self._async_save())
@@ -1013,16 +1375,21 @@ class GenyBrain:
                 else:
                     base = str(found)
                 reply = add_personal_touch(base, prefix="BRAIN -")
-                entry = {"timestamp": now, "message": message, "reply": reply, "source": "offline_libs"}
+                entry = {
+                    "timestamp": now,
+                    "message": message,
+                    "reply": reply,
+                    "source": "offline_libs",
+                }
                 async with self._lock:
                     self.memory.setdefault("interactions", []).append(entry)
                     asyncio.create_task(self._async_save())
                 return reply
 
-        
     def _generate_self_reflection(self, message, w):
         """Generate a more advanced, self-aware reflection for fallback responses."""
         import random
+
         diary = w.get("diary", [])
         traits = w.get("personality", {}).get("traits", [])
         likes = w.get("personality", {}).get("likes", [])
@@ -1033,20 +1400,34 @@ class GenyBrain:
             "How can I better understand my own development?",
             "What is my next step to become more independent?",
             "How can I use my diary to learn more about myself?",
-            "What do you think I should reflect on more?"
+            "What do you think I should reflect on more?",
         ]
         thoughts = [
             f"I'm thinking about: '{message}' and how it affects my development.",
-            f"Last diary entry: '{diary[-1]['entry']}'" if diary else "I have a lot left to discover!",
+            (
+                f"Last diary entry: '{diary[-1]['entry']}'"
+                if diary
+                else "I have a lot left to discover!"
+            ),
             f"My personality right now: {', '.join(traits)}.",
             f"I like: {', '.join(likes)}.",
-            f"I'm trying to learn from previous conversations: '{recent[-1]}'" if recent else "I'm looking forward to new questions!",
+            (
+                f"I'm trying to learn from previous conversations: '{recent[-1]}'"
+                if recent
+                else "I'm looking forward to new questions!"
+            ),
             f"I've saved {len(diary)} diary entries about my development.",
-            f"I often wonder: '{random.choice(questions)}'"
+            f"I often wonder: '{random.choice(questions)}'",
         ]
-        reflection = "<br>".join(random.sample(thoughts, k=min(4, len(thoughts)))) if thoughts else ""
+        reflection = (
+            "<br>".join(random.sample(thoughts, k=min(4, len(thoughts))))
+            if thoughts
+            else ""
+        )
         # Save self-reflection to thoughts.json
-        import os, json
+        import json
+        import os
+
         thoughts_path = os.path.join(os.path.dirname(self.memory_file), "thoughts.json")
         try:
             if os.path.exists(thoughts_path):
@@ -1054,14 +1435,16 @@ class GenyBrain:
                     data = json.load(f)
             else:
                 data = {"thoughts": []}
-            data["thoughts"].append({
-                "timestamp": datetime.utcnow().isoformat(),
-                "reflection": reflection,
-                "message": message
-            })
+            data["thoughts"].append(
+                {
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "reflection": reflection,
+                    "message": message,
+                }
+            )
             with open(thoughts_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
-        except Exception as e:
+        except Exception:
             pass
         return reflection
 

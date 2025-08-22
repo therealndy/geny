@@ -1,16 +1,19 @@
 import logging
 import os
 
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+
+from geny.geny_brain import GenyBrain
+
 # Configure logging immediately so module-level startup logs (e.g. in
 # `geny.gemini_api`) are visible during process startup and in Render logs.
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s"
+)
 logger = logging.getLogger("geny_backend")
-
-from fastapi import FastAPI, Request, HTTPException
-from pydantic import BaseModel
-from geny.geny_brain import GenyBrain
-from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
@@ -51,8 +54,12 @@ geny = brain
 # clearly show whether the API key and client library are present in-process.
 try:
     from geny import gemini_api as _g
-    logger.info("Startup GenAI status: api_key_present=%s, genai_module_available=%s",
-                bool(getattr(_g, "API_KEY", None)), getattr(_g, "genai", None) is not None)
+
+    logger.info(
+        "Startup GenAI status: api_key_present=%s, genai_module_available=%s",
+        bool(getattr(_g, "API_KEY", None)),
+        getattr(_g, "genai", None) is not None,
+    )
 except Exception as e:
     logger.exception("Failed to import geny.gemini_api at startup: %s", e)
 
@@ -79,6 +86,7 @@ async def genai_status():
     """
     try:
         from geny import gemini_api as _g
+
         return {
             "api_key_present": bool(getattr(_g, "API_KEY", None)),
             "genai_module_available": getattr(_g, "genai", None) is not None,
@@ -86,6 +94,7 @@ async def genai_status():
     except Exception as e:
         logger.exception("Failed to determine genai status: %s", e)
         return {"api_key_present": False, "genai_module_available": False}
+
 
 @app.post("/chat")
 async def chat(req: ChatRequest):
@@ -113,10 +122,12 @@ async def chat(req: ChatRequest):
         logger.error(f"Error in /chat: {e}", exc_info=True)
         return {"reply": "Sorry, something went wrong.", "status": "error"}
 
+
 @app.get("/summary")
 async def summary():
     # use the brain's light-weight summariser
     return {"summary": brain.generate_daily_summary()}
+
 
 @app.post("/sync")
 async def sync_endpoint(request: Request):
@@ -125,14 +136,19 @@ async def sync_endpoint(request: Request):
     brain.save_memory()
     return {"status": "synced", "received": data}
 
+
 @app.get("/ping")
 def ping():
     return {"status": "ok"}
+
+
 # Real-tidsendpoints för frontend-tabbar
+
 
 @app.get("/life")
 async def get_life():
     return JSONResponse(content=brain.get_life_summary())
+
 
 @app.get("/age")
 async def get_age():
@@ -143,6 +159,7 @@ async def get_age():
 async def get_status():
 
     return JSONResponse(content=brain.get_current_status())
+
 
 @app.get("/relations")
 async def get_relations():
@@ -165,7 +182,9 @@ async def import_memory(request: Request):
     payload = await request.json()
     # payload should be a dict representing memory.json
     if not isinstance(payload, dict):
-        raise HTTPException(status_code=400, detail="Invalid payload, expected JSON object")
+        raise HTTPException(
+            status_code=400, detail="Invalid payload, expected JSON object"
+        )
     # merge: update existing keys, overwrite lists/dicts
     try:
         brain.memory.update(payload)
@@ -174,4 +193,3 @@ async def import_memory(request: Request):
     except Exception as e:
         logger.exception("Failed to import memory")
         raise HTTPException(status_code=500, detail=str(e))
-

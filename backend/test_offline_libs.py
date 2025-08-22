@@ -1,12 +1,16 @@
-import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import sys
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import pytest
+
 from geny.geny_brain import GenyBrain
+
 
 @pytest.fixture(scope="module")
 def brain():
     return GenyBrain()
+
 
 def test_lookup_advanced_datasets(brain):
     # Should find ImageNet
@@ -15,6 +19,7 @@ def test_lookup_advanced_datasets(brain):
     # Should find COCO
     result = brain.lookup_offline("COCO")
     assert result and "object detection" in result.lower()
+
 
 def test_lookup_ai_coding_ultra_overview(brain):
     # Should find AI/coding overview
@@ -26,6 +31,7 @@ def test_lookup_ai_coding_ultra_overview(brain):
     # Should find java example
     result = brain.lookup_offline("java_example_socket")
     assert result and "tcp client" in result.lower()
+
 
 def test_lookup_fuzzy_and_substring(brain):
     # Fuzzy match for 'imagenett' (typo)
@@ -40,6 +46,7 @@ def test_lookup_fuzzy_and_substring(brain):
     # Substring in value
     result = brain.lookup_offline("python programming problems")
     assert result and "python programming problems" in result.lower()
+
 
 def test_lookup_language_detection(brain):
     # Swedish question triggers Swedish bonus (åäö in svar)
