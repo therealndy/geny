@@ -98,7 +98,6 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
   bool _isWaiting = false;
   late TabController _tabController;
 
-  bool _backendOk = true;
 
   @override
   void initState() {
@@ -133,20 +132,17 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
         setState(() {
           _messages.add(_ChatMessage(text: reply, isGeny: true));
           _isWaiting = false;
-          _backendOk = true;
         });
       } else {
         setState(() {
           _messages.add(_ChatMessage(text: '[backend error ${res.statusCode}]', isGeny: true));
           _isWaiting = false;
-          _backendOk = false;
         });
       }
     } catch (e) {
       setState(() {
         _messages.add(_ChatMessage(text: '[network error] $e', isGeny: true));
         _isWaiting = false;
-        _backendOk = false;
       });
     }
   }
@@ -177,7 +173,7 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
                     borderRadius: BorderRadius.circular(22),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: 8,
                         offset: Offset(0, 2),
                       ),
