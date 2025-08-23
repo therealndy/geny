@@ -19,6 +19,13 @@
 <body>
   <div id="chat">
     <h2>Geny Web Chat</h2>
+    <div id="tabs" style="display:flex;gap:8px;margin-bottom:12px;">
+      <button data-tab="story" class="tabbtn">Story</button>
+      <button data-tab="age" class="tabbtn">Age</button>
+      <button data-tab="status" class="tabbtn">Status</button>
+      <button data-tab="relation" class="tabbtn">Relation</button>
+    </div>
+    <div id="tabContent" style="background:#111;padding:10px;border-radius:8px;margin-bottom:12px;min-height:48px;"></div>
     <div id="messages"></div>
     <div id="inputRow">
   <textarea id="msgInput" rows="2" placeholder="Type your message..." autofocus style="resize:vertical;width:100%;font-size:16px;padding:10px;border-radius:6px;border:none;"></textarea>
@@ -33,6 +40,40 @@
     const messagesDiv = document.getElementById('messages');
     const input = document.getElementById('msgInput');
     const sendBtn = document.getElementById('sendBtn');
+    const tabContent = document.getElementById('tabContent');
+    const tabButtons = Array.from(document.querySelectorAll('.tabbtn'));
+
+    async function fetchAndRenderTab(tab) {
+      try {
+        if (tab === 'story') {
+          const r = await fetch(backendBase.replace(/\/$/, '') + '/world/learning');
+          const j = await r.json();
+          tabContent.innerText = j.life_summary?.summary || 'No story yet.';
+        } else if (tab === 'age') {
+          const r = await fetch(backendBase.replace(/\/$/, '') + '/world/time');
+          const j = await r.json();
+          tabContent.innerText = `Virtual age: ${j.virtual_age?.years}y ${j.virtual_age?.days}d ${j.virtual_age?.hours}h (scale ${j.scale})`;
+        } else if (tab === 'status') {
+          const r = await fetch(backendBase.replace(/\/$/, '') + '/world/learning');
+          const j = await r.json();
+          tabContent.innerText = `Activity: ${j.presence?.method || 'internal'}, Exploration running: ${j.exploration?.running}`;
+        } else if (tab === 'relation') {
+          const r = await fetch(backendBase.replace(/\/$/, '') + '/world/learning');
+          const j = await r.json();
+          tabContent.innerText = (j.life_summary?.summary && j.life_summary?.summary.split('\n')[0]) || 'No relations.';
+        }
+      } catch (e) {
+        tabContent.innerText = 'Error loading tab: ' + e;
+      }
+    }
+
+    tabButtons.forEach(b => b.addEventListener('click', (ev) => {
+      tabButtons.forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      fetchAndRenderTab(b.getAttribute('data-tab'));
+    }));
+    // select default tab
+    (tabButtons[0] || {click:()=>{}}).click();
 
     function addMsg(text, who) {
       const div = document.createElement('div');

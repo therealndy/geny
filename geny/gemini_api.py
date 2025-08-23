@@ -125,7 +125,12 @@ def _jittered_backoff(attempt: int, base: float = 0.5, cap: float = 10.0) -> flo
     return expo * (0.5 + random.random() * 0.5)
 
 
-async def _call_gemini(prompt: str, max_retries: int = 3, timeout: int = None) -> str:
+async def _call_gemini(
+    prompt: str,
+    max_retries: int = 3,
+    timeout: int = None,
+    temperature: float | None = None,
+) -> str:
     if not API_KEY:
         msg = "[Gemini error] Missing API key. Set GENAI_API_KEY or configure Secret Manager."
         logger.error(msg)
@@ -142,7 +147,12 @@ async def _call_gemini(prompt: str, max_retries: int = 3, timeout: int = None) -
 
         def blocking_call():
             genai.configure(api_key=API_KEY)
-            model = genai.GenerativeModel(MODEL)
+            if temperature is not None:
+                model = genai.GenerativeModel(
+                    MODEL, generation_config={"temperature": float(temperature)}
+                )
+            else:
+                model = genai.GenerativeModel(MODEL)
             response = model.generate_content(f"{system_prompt}\n{prompt}")
             # Gemini returns a response object with .text or .candidates[0].text
             if hasattr(response, "text"):
@@ -194,7 +204,11 @@ async def _call_gemini(prompt: str, max_retries: int = 3, timeout: int = None) -
 
 
 async def generate_reply(
-    prompt: str, *, max_retries: int = 3, timeout: Optional[float] = 15
+    prompt: str,
+    *,
+    max_retries: int = 3,
+    timeout: Optional[float] = 15,
+    temperature: Optional[float] = None,
 ) -> str:
     """Public async function used by the app.
 
@@ -203,7 +217,9 @@ async def generate_reply(
     """
     # If we have an API key, call the real Gemini client
     if API_KEY:
-        result = await _call_gemini(prompt, max_retries=max_retries, timeout=timeout)
+        result = await _call_gemini(
+            prompt, max_retries=max_retries, timeout=timeout, temperature=temperature
+        )
         try:
             return str(result) if result is not None else ""
         except Exception:

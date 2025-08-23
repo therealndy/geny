@@ -2,12 +2,40 @@ import json
 import os
 import sqlite3
 import tempfile
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 
 class MemoryModule:
     def __init__(self, db_path: str = "memory.db", json_path: str = "memory.json"):
+        """Initialize MemoryModule with env-overridable storage locations.
+
+        Environment variables:
+        - GENY_DATA_DIR: base directory for memory files. If set and db/json paths are
+          not absolute, they will be resolved under this directory.
+        - GENY_MEMORY_DB: absolute or relative path to SQLite DB file.
+        - GENY_MEMORY_JSON: absolute or relative path to JSON memory file.
+        """
+        # Resolve paths with environment overrides
+        data_dir = os.environ.get("GENY_DATA_DIR")
+        db_env = os.environ.get("GENY_MEMORY_DB")
+        json_env = os.environ.get("GENY_MEMORY_JSON")
+
+        # Apply specific file overrides first
+        db_path = db_env or db_path
+        json_path = json_env or json_path
+
+        # If a data dir is provided, and paths are not absolute, place them under it
+        if data_dir:
+            if not os.path.isabs(db_path):
+                db_path = os.path.join(data_dir, db_path)
+            if not os.path.isabs(json_path):
+                json_path = os.path.join(data_dir, json_path)
+
+        # Ensure parent directories exist
+        os.makedirs(os.path.dirname(db_path) or ".", exist_ok=True)
+        os.makedirs(os.path.dirname(json_path) or ".", exist_ok=True)
+
         self.db_path = db_path
         self.json_path = json_path
         self._init_db()
@@ -27,7 +55,7 @@ class MemoryModule:
         conn.close()
 
     def save_interaction(self, user_message: str, geny_reply: str):
-        timestamp = datetime.utcnow().isoformat()
+        timestamp = datetime.now(timezone.utc).isoformat()
         # Save to SQLite
         conn = sqlite3.connect(self.db_path)
         c = conn.cursor()
@@ -107,7 +135,7 @@ class MemoryModule:
                 conn = sqlite3.connect(self.db_path)
                 c = conn.cursor()
                 for it in interactions:
-                    ts = it.get("timestamp") or datetime.utcnow().isoformat()
+                    ts = it.get("timestamp") or datetime.now(timezone.utc).isoformat()
                     msg = it.get("message") or it.get("user_message") or ""
                     reply = it.get("reply") or it.get("geny_reply") or ""
                     # Avoid duplicates: check for exact timestamp+message

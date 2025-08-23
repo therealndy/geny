@@ -1,3 +1,7 @@
+Quick start: see FirstRun.md for a fast first successful run.
+
+[![Backend Tests](https://github.com/therealndy/geny/actions/workflows/backend-tests.yml/badge.svg)](https://github.com/therealndy/geny/actions/workflows/backend-tests.yml)
+
 (Minimal README)
 
 Prereqs
@@ -86,6 +90,29 @@ Usage:
 ```
 
 The script will call `./scripts/start_backend.sh` and then run `flutter run --dart-define=BACKEND_URL=http://HOST:PORT` in `android_app/app`.
+
+## RAG / Vectorstore (optional extras)
+
+This repository includes a minimal FAISS-backed `VectorStore` in `geny_ai/rag/store.py`.
+
+To enable full RAG functionality and background indexing install the ML extras:
+
+```bash
+pip install sentence-transformers faiss-cpu numpy
+```
+
+Environment variables:
+- `GENY_USE_RAG=1` — enable using the vectorstore for RAG-augmented answers in `/chat`.
+- `GENY_BACKGROUND_INDEX=1` — enable a background indexer that periodically indexes `world.diary`.
+- `GENY_BACKGROUND_INDEX_INTERVAL` — seconds between background indexer runs (default 300).
+
+Admin endpoints:
+- `POST /mem/index/diary` — rebuild the vectorstore from current `world.diary` (returns indexed count).
+- `GET /mem/search?q=...` — will prefer vectorstore results when available.
+
+Notes:
+- The bundled vectorstore is minimal and intended for experiments. For production-scale usage prefer Chroma, Milvus, Weaviate, or Pinecone and connect via adapters.
+- Fine-tuning via PEFT/LoRA is possible; see `geny_ai/learn/lora_stub.py` for an example snippet and installation hints.
 
 
 

@@ -22,29 +22,28 @@ def no_network(monkeypatch):
 
 @pytest.fixture(autouse=True)
 def mock_gemini_client(monkeypatch):
-    """Default test fixture that replaces genai.Client with a harmless fake
-    client so unit tests don't call the real Gemini API.
-    Tests that need to exercise error paths can override this fixture.
+    """Default test fixture that replaces google.generativeai with a harmless fake.
+
+    Newer code uses genai.configure + genai.GenerativeModel(...).generate_content().
+    We stub those to avoid any network calls while keeping behavior predictable.
     """
 
-    class FakeChat:
-        def send_message(self, *_args, **_kwargs):
-            class Resp:
-                text = "Test fake reply"
+    class FakeResponse:
+        text = "Test fake reply"
 
-            return Resp()
-
-    class FakeChats:
-        def create(self, model):
-            return FakeChat()
-
-    class FakeClient:
-        def __init__(self, api_key=None):
+    class FakeModel:
+        def __init__(self, *_a, **_k):
             pass
 
-        chats = FakeChats()
+        def generate_content(self, *_a, **_k):
+            return FakeResponse()
 
-    monkeypatch.setattr(gemini_api, "genai", gemini_api.genai)
-    monkeypatch.setattr(gemini_api.genai, "Client", FakeClient)
+    class FakeGenAI:
+        def configure(self, **_k):
+            return None
+
+        GenerativeModel = FakeModel
+
+    monkeypatch.setattr(gemini_api, "genai", FakeGenAI())
 
     yield

@@ -1,0 +1,134 @@
+{
+  "window": {
+    "start_local": "2025-08-23T05:00:00+03:00",
+    "end_local": "2025-08-23T10:28:24.964190+03:00",
+    "start_utc": "2025-08-23T02:00:00+00:00",
+    "end_utc": "2025-08-23T07:28:24.964190+00:00"
+  },
+  "interactions": {
+    "count": 305,
+    "items": [
+      {
+        "timestamp": "2025-08-23T07:22:06.597493+00:00",
+        "message": "hello 0",
+        "reply": "BRAIN - I think... hello 0 I'm not connected to Gemini right now, but I'm here to listen and help! What would you like to talk about?"
+      },
+      {
+        "timestamp": "2025-08-23T07:22:06.597532+00:00",
+        "message": "hello 0",
+        "reply": "BRAIN - I think... hello 0 I'm not connected to Gemini right now, but I'm here to listen and help! What would you like to talk about?"
+      },
+      {
+        "timestamp": "2025-08-23T07:22:06.654121+00:00",
+        "message": "hello 1",
+        "reply": "BRAIN - I think... hello 1 I'm not connected to Gemini right now, but I'm here to listen and help! What would you like to talk about?"
+      },
+      {
+        "timestamp": "2025-08-23T07:22:06.654152+00:00",
+        "message": "hello 1",
+        "reply": "BRAIN - I think... hello 1 I'm not connected to Gemini right now, but I'm here to listen and help! What would you like to talk about?"
+      },
+      {
+        "timestamp": "2025-08-23T07:22:06.706377+00:00",
+        "message": "hello 2",
+        "reply": "BRAIN - I think... hello 2 I'm not connected to Gemini right now, but I'm here to listen and help! What would you like to talk about?"
+      },
+      {
+        "timestamp": "2025-08-23T07:22:06.706377+00:00",
+        "message": "hello 2",
+        "reply": "BRAIN - I think... hello 2 I'm not connected to Gemini right now, but I'm here to listen and help! What would you like to talk about?"
+      },
+      {
+        "timestamp": "2025-08-23T07:22:06.706410+00:00",
+        "message": "hello 2",
+        "reply": "BRAIN - I think... hello 2 I'm not connected to Gemini right now, but I'm here to listen and help! What would you like to talk about?"
+      },
+      {
+        "timestamp": "2025-08-23T07:22:06.755941+00:00",
+        "message": "hello 3",
+        "reply": "BRAIN - I think... hello 3 I'm not connected to Gemini right now, but I'm here to listen and help! What would you like to talk about?"
+      },
+      {
+        "timestamp": "2025-08-23T07:22:06.755941+00:00",
+        "message": "hello 3",
+        "reply": "BRAIN - I think... hello 3 I'm not connected to Gemini right now, but I'm here to listen and help! What would you like to talk about?"
+      },
+      {
+        "timestamp": "2025-08-23T07:22:06.755972+00:00",
+        "message": "hello 3",
+        "reply": "BRAIN - I think... hello 3 I'm not connected to Gemini right now, but I'm here to listen and help! What would you like to talk about?"
+      }
+    ]
+  },
+  "diary": {
+    "count": 283,
+    "items": [
+      {
+        "date": "2025-08-23T13:09:28.619855+00:00",
+        "entry": "Talked with Andreas about: Hej",
+        "insight": "I learned a little more about what Andreas cares about.",
+        "meta_now_real": "2025-08-23T07:22:05.649526+00:00"
+      },
+      {
+        "date": "2025-08-23T13:09:28.700417+00:00",
+        "entry": "Talked with Andreas about: hello",
+        "insight": "I learned a little more about what Andreas cares about.",
+        "meta_now_real": "2025-08-23T07:22:05.689809+00:00"
+      },
+      {
+        "date": "2025-08-23T13:09:28.795265+00:00",
+        "entry": "Talked with Andreas about: x",
+        "insight": "I learned a little more about what Andreas cares about.",
+        "meta_now_real": "2025-08-23T07:22:05.737234+00:00"
+      },
+      {
+        "date": "2025-08-23T07:22:05.795579+00:00",
+        "entry": {
+          "total_interactions": 97,
+          "last": "2025-08-23T07:22:05.673594+00:00"
+        },
+        "insight": null,
+        "meta_now_real": null
+      },
+      {
+        "date": "2025-08-23T07:22:05.927141+00:00",
+        "entry": {
+          "total_interactions": 97,
+          "last": "2025-08-23T07:22:05.673594+00:00"
+        },
+        "insight": null,
+        "meta_now_real": null
+      },
+      {
+        "date": "2025-08-23T13:09:29.820827+00:00",
+        "entry": "I think... AUTO-CURIOSITY: In one or two sentences, write a concise diary insight about something you (Geny) learned or noticed just now in your world. Focus on personal growth or a question you want to explore next. I'm not connected to Gemini right now, but I'm here to listen and help! What would you like to talk about?",
+        "insight": "I think... AUTO-CURIOSITY: In one or two sentences, write a concise diary insight about something you (Geny) learned or noticed just now in your world. Focus on personal growth or a question you want to explore next. I'm not connected to Gemini right now, but I'm here to listen and help! What would you like to talk about?",
+        "meta_now_real": "2025-08-23T07:22:06.250000+00:00"
+      },
+      {
+        "date": "2025-08-23T13:09:30.553657+00:00",
+        "entry": "Talked with Andreas about: hello 0",
+        "insight": "I learned a little more about what Andreas cares about.",
+        "meta_now_real": "2025-08-23T07:22:06.616428+00:00"
+      },
+      {
+        "date": "2025-08-23T13:09:30.661643+00:00",
+        "entry": "Talked with Andreas about: hello 1",
+        "insight": "I learned a little more about what Andreas cares about.",
+        "meta_now_real": "2025-08-23T07:22:06.670424+00:00"
+      },
+      {
+        "date": "2025-08-23T13:09:30.767767+00:00",
+        "entry": "Talked with Andreas about: hello 2",
+        "insight": "I learned a little more about what Andreas cares about.",
+        "meta_now_real": "2025-08-23T07:22:06.723486+00:00"
+      },
+      {
+        "date": "2025-08-23T13:09:30.861673+00:00",
+        "entry": "Talked with Andreas about: hello 3",
+        "insight": "I learned a little more about what Andreas cares about.",
+        "meta_now_real": "2025-08-23T07:22:06.770441+00:00"
+      }
+    ]
+  }
+}

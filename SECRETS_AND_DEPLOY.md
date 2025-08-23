@@ -61,3 +61,18 @@ After deploy: run the post-deploy smoke tests
 2. Click "Run workflow" and provide the base URL of the deployed Render service (e.g. https://geny-1.onrender.com).
 
 If you want me to trigger the deploy after you add the secrets, reply here with "secrets added" and I will dispatch the workflow and run the smoke tests.
+
+Persistent storage & memory paths
+---------------------------------
+Geny persists conversations and diary to SQLite (`memory.db`) and JSON (`memory.json`). To survive container restarts on Render, attach a Render Disk and point Geny at that mount using these environment variables:
+
+- `GENY_DATA_DIR` bdir]: Base directory for memory files. If set, relative paths will be resolved under this directory.
+- `GENY_MEMORY_DB` bfile]: Override path (absolute or relative) to the SQLite DB file. Default `memory.db`.
+- `GENY_MEMORY_JSON` bfile]: Override path (absolute or relative) to the JSON memory file. Default `memory.json`.
+
+Example (Render):
+- Create a Disk (e.g., 1GB) and mount it at `/var/data`.
+- Set env var `GENY_DATA_DIR=/var/data`.
+- Optionally set `GENY_MEMORY_DB=geny/memory.db` and `GENY_MEMORY_JSON=geny/memory.json` to organize under the data dir.
+
+The app will create parent directories as needed and write atomically. SQLite remains the primary ledger; JSON is a human-inspectable mirror.

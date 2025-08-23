@@ -1,0 +1,14 @@
+# Geny AI configuration (initial defaults)
+backend_url: "http://127.0.0.1:8000"
+models:
+  llm: "llama3:8b"  # via Ollama (fallback to Gemini wrapper if not available)
+  embeddings: "sentence-transformers/all-MiniLM-L6-v2"
+limits:
+  ai_replies_per_hour: 4
+simulation:
+  accel_factor: 25
+  extreme_accel_factor: 50
+features:
+  audio: false
+  vision: false
+  full_setup: false
