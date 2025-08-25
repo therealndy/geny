@@ -43,16 +43,48 @@
     const tabContent = document.getElementById('tabContent');
     const tabButtons = Array.from(document.querySelectorAll('.tabbtn'));
 
-    async function fetchAndRenderTab(tab) {
+  async function fetchAndRenderTab(tab) {
       try {
         if (tab === 'story') {
           const r = await fetch(backendBase.replace(/\/$/, '') + '/world/learning');
           const j = await r.json();
           tabContent.innerText = j.life_summary?.summary || 'No story yet.';
         } else if (tab === 'age') {
-          const r = await fetch(backendBase.replace(/\/$/, '') + '/world/time');
+          // Use the new /world/virtual-age endpoint which can optionally persist a friendly sentence
+          const endpoint = backendBase.replace(/\/$/, '') + '/world/virtual-age';
+          const r = await fetch(endpoint);
           const j = await r.json();
-          tabContent.innerText = `Virtual age: ${j.virtual_age?.years}y ${j.virtual_age?.days}d ${j.virtual_age?.hours}h (scale ${j.scale})`;
+          if (j && j.age) {
+            const a = j.age;
+            tabContent.innerHTML = `
+              <div>Virtual age: ${a.years}y ${a.days}d ${a.hours}h ${a.minutes}m (scale ${a.scale})</div>
+              <div style="margin-top:8px;">
+                <button id="saveAgeBtn" style="background:#2CB67D;color:#fff;border:none;border-radius:6px;padding:8px 12px;cursor:pointer">Save to diary</button>
+                <span id="saveResult" style="margin-left:10px;color:#ddd"></span>
+              </div>
+            `;
+            const saveBtn = document.getElementById('saveAgeBtn');
+            const saveResult = document.getElementById('saveResult');
+            saveBtn.addEventListener('click', async () => {
+              saveBtn.disabled = true;
+              saveResult.textContent = 'Saving...';
+              try {
+                const r2 = await fetch(endpoint + '?persist=1');
+                const j2 = await r2.json();
+                if (j2 && j2.saved) {
+                  saveResult.textContent = 'Saved: ' + (j2.sentence || '');
+                } else {
+                  saveResult.textContent = 'Not saved';
+                }
+              } catch (err) {
+                saveResult.textContent = 'Error: ' + err;
+              } finally {
+                saveBtn.disabled = false;
+              }
+            });
+          } else {
+            tabContent.innerText = 'No age data available.';
+          }
         } else if (tab === 'status') {
           const r = await fetch(backendBase.replace(/\/$/, '') + '/world/learning');
           const j = await r.json();
