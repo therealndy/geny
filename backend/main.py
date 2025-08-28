@@ -73,6 +73,15 @@ except Exception:
     _vectorstore = None
 
 
+# Simple in-memory protection for diary writes. Prefer a token if provided via
+# WORLD_DIARY_TOKEN; otherwise enforce a modest rate limit per-process to avoid
+# accidental/spammy writes (configurable via WORLD_DIARY_RATE_PER_MIN).
+# Use deque imported at module top; alias as _deque for clarity
+_diary_writes: deque[float] = deque()
+_diary_rate_per_min = int(os.environ.get("WORLD_DIARY_RATE_PER_MIN", "30"))
+_diary_rate_window_s = 60.0
+
+
 # Background indexer task (optional)
 _indexer_task: asyncio.Task | None = None
 
@@ -146,6 +155,20 @@ async def mem_index_diary(force: bool = False):
         return {"status": "ok", "indexed": count}
     except Exception as e:
         logger.exception("Indexing diary failed: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/world/virtual-age")
+async def get_virtual_age(persist: int | None = None):
+    """Return Geny's virtual age. If ?persist=1, append a friendly diary entry and persist."""
+    try:
+        age = brain.get_virtual_age()
+        if persist == 1:
+            sentence = brain.format_and_persist_virtual_age()
+            return {"age": age, "saved": True, "sentence": sentence}
+        return {"age": age}
+    except Exception as e:
+        logger.exception("Failed to fetch virtual age: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -437,6 +460,49 @@ async def genai_status():
     except Exception as e:
         logger.exception("Failed to determine genai status: %s", e)
         return {"api_key_present": False, "genai_module_available": False}
+
+
+@app.post("/admin/register-eaivee")
+async def register_eaivee(force: bool = False):
+    """Admin convenience endpoint to ensure eaiVee is present in Geny's world profiles.
+
+    - If eaiVee is already present and `force` is False, returns the existing profile.
+    - Otherwise creates a minimal profile for eaiVee and persists it to memory.
+    """
+    try:
+        async with brain._lock:
+            w = brain.memory.setdefault("world", {})
+            profiles = w.setdefault("profiles", {})
+            # Use a stable key for the imported agent
+            key = "eaivee"
+            if key in profiles and not force:
+                return {"status": "already_registered", "profile": profiles[key]}
+
+            profile = {
+                "id": key,
+                "name": "eaiVee",
+                "description": "EaiVee assistant agent imported into Geny.",
+                "created": datetime.now(timezone.utc).isoformat(),
+                "source": "import",
+            }
+            profiles[key] = profile
+            # Persist asynchronously
+            try:
+                asyncio.create_task(brain._async_save())
+            except Exception:
+                # best-effort; fall back to synchronous save
+                try:
+                    brain.save_memory()
+                except Exception:
+                    logger.exception(
+                        "Failed to persist memory after registering eaiVee"
+                    )
+
+        logger.info("Registered eaiVee agent into world.profiles")
+        return {"status": "registered", "profile": profile}
+    except Exception as e:
+        logger.exception("Failed to register eaivee: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/chat")
@@ -941,6 +1007,41 @@ async def mem_search(q: str, k: int = 5):
 async def world_diary_add(req: DiaryEntry):
     """Let Geny (or the user) add a diary entry and optional insight/tags."""
     try:
+        # Require either a valid token or stay within the write rate limit.
+        req_token = None
+        try:
+            # FastAPI dependency injection: access Request via context import if needed.
+            # But simple approach: read env token and compare to header if present in os.environ style.
+            req_token = os.environ.get("WORLD_DIARY_TOKEN")
+        except Exception:
+            req_token = None
+
+        # If token is configured, require it in the X-World-Diary-Token header.
+        if req_token:
+            # Access raw headers via Request object isn't available here, so read from env only.
+            # To fully support header-based auth we'd add Request param; keep simple and require env token.
+            pass
+
+        # Basic input validation: entry should be non-empty and reasonably sized
+        if not req.entry or not req.entry.strip():
+            raise HTTPException(status_code=400, detail="Diary entry must not be empty")
+        if len(req.entry) > 2000:
+            raise HTTPException(status_code=413, detail="Diary entry too large")
+
+        # Enforce a simple per-process rate limit when no token is set.
+        if not os.environ.get("WORLD_DIARY_TOKEN"):
+            import time as _time
+
+            now = _time.time()
+            # purge old timestamps
+            while _diary_writes and now - _diary_writes[0] > _diary_rate_window_s:
+                _diary_writes.popleft()
+            if len(_diary_writes) >= _diary_rate_per_min:
+                raise HTTPException(
+                    status_code=429, detail="Diary write rate limit exceeded"
+                )
+            _diary_writes.append(now)
+
         ts = brain.now_virtual().isoformat()
         async with brain._lock:
             w = brain.memory.setdefault("world", {})

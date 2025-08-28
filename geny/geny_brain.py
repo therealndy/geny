@@ -187,6 +187,47 @@ class GenyBrain:
             "scale": scale,
         }
 
+    def format_and_persist_virtual_age(self) -> str:
+        """Return a friendly sentence about Geny's virtual age and persist it to world.diary.
+
+        Returns the sentence that was saved.
+        """
+        try:
+            age = self.get_virtual_age()
+            parts = []
+            if age.get("years"):
+                parts.append(f"{age['years']} years")
+            if age.get("days"):
+                parts.append(f"{age['days']} days")
+            if age.get("hours") or age.get("minutes"):
+                parts.append(
+                    f"{age.get('hours',0)} hours and {age.get('minutes',0)} minutes"
+                )
+            human = ", ".join(parts) if parts else "a short while"
+            sentence = f"I have been alive (virtual time) for about {human}."
+
+            # Append to diary with timestamp and mark as an insight
+            w = self.memory.setdefault("world", {})
+            diary = w.setdefault("diary", [])
+            entry = {
+                "date": datetime.now(timezone.utc).isoformat(),
+                "entry": sentence,
+                "insight": "virtual_age",
+            }
+            diary.append(entry)
+            # Schedule save
+            try:
+                self._safe_schedule_save()
+            except Exception:
+                try:
+                    if hasattr(self.memory_module, "save_memory_dict"):
+                        self.memory_module.save_memory_dict(self.memory)
+                except Exception:
+                    pass
+            return sentence
+        except Exception:
+            return "I can't calculate my age right now."
+
     def now_virtual(self) -> datetime:
         """Return the current virtual datetime mapped from birth with scaling.
 
@@ -900,7 +941,18 @@ class GenyBrain:
             # As a last resort, try synchronous save to avoid losing data
             try:
                 self.memory.setdefault("interactions", []).append(entry)
-                self._save()
+                # Prefer the backward-compatible _save() when available,
+                # otherwise call the canonical save_memory() implementation.
+                try:
+                    save_fn = getattr(self, "_save", None)
+                    if callable(save_fn):
+                        save_fn()
+                    else:
+                        self.save_memory()
+                except Exception as e:
+                    import logging
+
+                    logging.exception("Error saving fallback interaction: %s", e)
             except Exception:
                 pass
 

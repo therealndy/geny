@@ -21,7 +21,10 @@ try:
 except ImportError:
     genai = None
     # Allows offline tests to run without Google Gemini installed
-from google.cloud import secretmanager
+try:
+    from google.cloud import secretmanager
+except Exception:  # pragma: no cover - optional dependency for production
+    secretmanager = None
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +37,9 @@ SECRET_NAME = os.getenv("GENAI_SECRET_NAME", "genai-api-key")
 def _get_api_key_from_secret_manager(
     project: str = SECRET_PROJECT, secret_name: str = SECRET_NAME
 ) -> Optional[str]:
+    if secretmanager is None:
+        logger.debug("Secret Manager client not available; skipping secret fetch")
+        return None
     try:
         client = secretmanager.SecretManagerServiceClient()
         name = f"projects/{project}/secrets/{secret_name}/versions/latest"
